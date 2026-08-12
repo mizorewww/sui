@@ -27,5 +27,4 @@ xcodebuild -project Sui.xcodeproj -scheme Sui -configuration Debug build
 
 ## 素材
 
-界面中的手柄矢量图来自 Wikimedia Commons 的 “Video Game Controller (56435) - The Noun Project.svg”，采用 CC0 1.0。
-
+界面使用用户提供的 Vecteezy Xbox-layout EPS，并从其 PostScript 矢量内容生成 AppKit 可直接缩放的 PDF；原始 EPS 保留在 `Assets`。先前的 Wikimedia CC0 SVG 也保留作来源明确的备用素材。

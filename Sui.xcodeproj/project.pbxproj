@@ -16,12 +16,12 @@
 		44FDC6DB2549B2BDDE317FF4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 604D16F239F6B9472BB7B26B /* SettingsView.swift */; };
 		4CE9DDA6E24817352622B0EB /* BuiltinPlugins.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C85227F6A166A776A314DF /* BuiltinPlugins.swift */; };
 		4F7439A374F2D81380FE35AC /* NativeAutomationHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975F26047EBA5EAF7D5893A4 /* NativeAutomationHost.swift */; };
-		5483C9F272960CDA1785864B /* controller.svg in Resources */ = {isa = PBXBuildFile; fileRef = D3F746324B7A9A5EC1FB576B /* controller.svg */; };
 		6284568DBFEBF1313D16D9CC /* BrowserExtensionInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8C7D4145F0D4C6D21E5DE3 /* BrowserExtensionInstaller.swift */; };
 		68A0C1861DB74DFBBE8922D5 /* BrowserBridgeHelper in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 1E80E4F6510134F54050B885 /* BrowserBridgeHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		698BFD4DE2703A57DA2955A2 /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CA1E9D022E1A32219495177 /* MainWindowController.swift */; };
 		69A2568E3607F667A5B9AC51 /* PTTCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABBB8CE0CC1677AE1971AFFF /* PTTCoordinator.swift */; };
 		6CE4E8D29E2DCB5467BA42A8 /* SuiSafariExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6BE0D06A62088A2AB2EAC069 /* SuiSafariExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		79F11146541276A4ECF956E7 /* controller.pdf in Resources */ = {isa = PBXBuildFile; fileRef = D2A23468990BADE2A57724AB /* controller.pdf */; };
 		80875F9D0B39ED5AB9F545B2 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 57B9717C1DC87FE3CE94FB10 /* background.js */; };
 		8517E2BF1DAE1C2EA5164030 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD984A694CACCCA3D85F262 /* SafariWebExtensionHandler.swift */; };
 		8AF36D6CC704749B2C98EF18 /* x-content.js in Resources */ = {isa = PBXBuildFile; fileRef = 309A51F6C3784D21997D6344 /* x-content.js */; };
@@ -100,8 +100,8 @@
 		ABBB8CE0CC1677AE1971AFFF /* PTTCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PTTCoordinator.swift; sourceTree = "<group>"; };
 		BA67199862389EE922EE8E2E /* PluginTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginTypes.swift; sourceTree = "<group>"; };
 		C050207C30CC06A957F13186 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		D2A23468990BADE2A57724AB /* controller.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = controller.pdf; sourceTree = "<group>"; };
 		D2ABE9C66FC039169ADAEBDD /* sui.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = sui.icns; sourceTree = "<group>"; };
-		D3F746324B7A9A5EC1FB576B /* controller.svg */ = {isa = PBXFileReference; path = controller.svg; sourceTree = "<group>"; };
 		DFD984A694CACCCA3D85F262 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -229,7 +229,7 @@
 		AC33C34CE48FAFB95875BB43 /* Assets */ = {
 			isa = PBXGroup;
 			children = (
-				D3F746324B7A9A5EC1FB576B /* controller.svg */,
+				D2A23468990BADE2A57724AB /* controller.pdf */,
 			);
 			path = Assets;
 			sourceTree = "<group>";
@@ -370,7 +370,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4266F5E6AB2BB3D9FEB1CE9C /* BrowserExtension in Resources */,
-				5483C9F272960CDA1785864B /* controller.svg in Resources */,
+				79F11146541276A4ECF956E7 /* controller.pdf in Resources */,
 				BDEB026037413EC74EB65938 /* sui.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

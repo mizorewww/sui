@@ -6,6 +6,7 @@ final class MappingView: NSView {
 
     private let controllerImage = NSImageView()
     private let emptyState = NSTextField(labelWithString: "Connect a controller to start")
+    private let overlay = MappingOverlayView()
     private var popups: [String: NSPopUpButton] = [:]
     private var mappings: [String: PluginID] = ["A": .telegram, "B": .x, "Y": .codex]
     private var availability: [PluginID: PluginAvailability] = [:]
@@ -15,11 +16,8 @@ final class MappingView: NSView {
         wantsLayer = true
 
         controllerImage.imageScaling = .scaleProportionallyUpOrDown
-        controllerImage.contentTintColor = .labelColor
-        if let url = Bundle.main.url(forResource: "controller", withExtension: "svg") {
-            let image = NSImage(contentsOf: url)
-            image?.isTemplate = true
-            controllerImage.image = image
+        if let url = Bundle.main.url(forResource: "controller", withExtension: "pdf") {
+            controllerImage.image = NSImage(contentsOf: url)
         }
         addSubview(controllerImage)
 
@@ -38,6 +36,8 @@ final class MappingView: NSView {
             popups[button] = popup
             addSubview(popup)
         }
+        overlay.mappingView = self
+        addSubview(overlay)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -65,7 +65,7 @@ final class MappingView: NSView {
                 popup.select(selected)
             }
         }
-        needsDisplay = true
+        overlay.needsDisplay = true
     }
 
     override func layout() {
@@ -79,14 +79,17 @@ final class MappingView: NSView {
         popups["Y"]?.frame = CGRect(x: popupX, y: centerY + 82, width: popupWidth, height: 34)
         popups["B"]?.frame = CGRect(x: popupX, y: centerY + 12, width: popupWidth, height: 34)
         popups["A"]?.frame = CGRect(x: popupX, y: centerY - 58, width: popupWidth, height: 34)
+        overlay.frame = bounds
+        overlay.needsDisplay = true
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
+    fileprivate func drawOverlay() {
+        // Exact face-button centers measured from the Xbox-layout EPS artwork.
+        // Coordinates are normalized so they remain correct as the window resizes.
         let labels: [(String, NSPoint)] = [
-            ("Y", NSPoint(x: controllerImage.frame.maxX - 86, y: controllerImage.frame.midY + 78)),
-            ("B", NSPoint(x: controllerImage.frame.maxX - 55, y: controllerImage.frame.midY + 18)),
-            ("A", NSPoint(x: controllerImage.frame.maxX - 92, y: controllerImage.frame.midY - 45))
+            ("Y", imagePoint(x: 0.7481, y: 0.7778)),
+            ("B", imagePoint(x: 0.8111, y: 0.6833)),
+            ("A", imagePoint(x: 0.7463, y: 0.5833))
         ]
         let accent = NSColor.controlAccentColor
         for (name, start) in labels {
@@ -111,11 +114,37 @@ final class MappingView: NSView {
         }
     }
 
+    private func imagePoint(x: CGFloat, y: CGFloat) -> NSPoint {
+        guard let image = controllerImage.image, image.size.width > 0, image.size.height > 0 else { return .zero }
+        let frame = controllerImage.frame
+        let scale = min(frame.width / image.size.width, frame.height / image.size.height)
+        let renderedSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let renderedRect = CGRect(
+            x: frame.midX - renderedSize.width / 2,
+            y: frame.midY - renderedSize.height / 2,
+            width: renderedSize.width,
+            height: renderedSize.height
+        )
+        return NSPoint(x: renderedRect.minX + renderedRect.width * x, y: renderedRect.minY + renderedRect.height * y)
+    }
+
     @objc private func mappingChanged(_ sender: NSPopUpButton) {
         guard let button = sender.identifier?.rawValue,
               let rawValue = sender.selectedItem?.representedObject as? String,
               let pluginID = PluginID(rawValue: rawValue) else { return }
         mappings[button] = pluginID
         onMappingChanged?(button, pluginID)
+    }
+}
+
+@MainActor
+private final class MappingOverlayView: NSView {
+    weak var mappingView: MappingView?
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        mappingView?.drawOverlay()
     }
 }

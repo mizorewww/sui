@@ -20,7 +20,7 @@ targets:
         excludes:
           - Info.plist
           - Sui.entitlements
-      - path: Assets/controller.svg
+      - path: Assets/controller.pdf
         buildPhase: resources
       - path: sui.icns
         buildPhase: resources
