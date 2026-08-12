@@ -50,7 +50,7 @@ async function xTab() {
 }
 
 async function sendToXPage(tabId, command) {
-  const attempts = command.command === "prepareX" ? 20 : 1;
+  const attempts = command.command === "prepareX" ? 80 : 1;
   let lastError;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
@@ -59,7 +59,7 @@ async function sendToXPage(tabId, command) {
     } catch (error) {
       lastError = error;
     }
-    if (attempt + 1 < attempts) await delay(250);
+    if (attempt + 1 < attempts) await delay(500);
   }
   if (lastError) throw lastError;
   return { ok: false, message: "Safari 没有收到 X.com 页面脚本的有效响应。" };

@@ -31,8 +31,8 @@ async function handle(request) {
   document.execCommand("insertText", false, request.text);
   composer.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: request.text }));
 
-  const postButton = document.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
-  if (!postButton || postButton.disabled || postButton.getAttribute("aria-disabled") === "true") {
+  const postButton = await findEnabledPostButton();
+  if (!postButton) {
     return { ok: false, message: "Post 按钮当前不可用。" };
   }
   postButton.click();
@@ -40,9 +40,18 @@ async function handle(request) {
 }
 
 async function findComposer() {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
     const composer = document.querySelector('[data-testid="tweetTextarea_0"][contenteditable="true"]');
     if (composer) return composer;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return null;
+}
+
+async function findEnabledPostButton() {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const button = document.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
+    if (button && !button.disabled && button.getAttribute("aria-disabled") !== "true") return button;
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   return null;

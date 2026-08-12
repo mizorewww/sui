@@ -25,6 +25,7 @@ final class BrowserBridge {
     private var incoming = Data()
     private var safariIncoming: [ObjectIdentifier: Data] = [:]
     private var pending: [UUID: CheckedContinuation<Response, Never>] = [:]
+    private var safariPendingCommands: [UUID: String] = [:]
     private var safariInstalled: Bool {
         guard let url = Bundle.main.builtInPlugInsURL?.appending(path: "sui Browser Bridge.appex") else { return false }
         return FileManager.default.fileExists(atPath: url.path)
@@ -158,6 +159,13 @@ final class BrowserBridge {
                 continue
             }
             logger.notice("Safari response received: \(response.ok), \(response.message ?? "no message", privacy: .public)")
+            if safariPendingCommands[response.id] == "prepareX",
+               !response.ok,
+               response.message == "没有找到 X Post 输入框。" {
+                logger.notice("X composer is still loading; keeping Safari preparation pending")
+                continue
+            }
+            safariPendingCommands[response.id] = nil
             pending.removeValue(forKey: response.id)?.resume(returning: response)
         }
         safariIncoming[key] = buffer
@@ -209,7 +217,7 @@ final class BrowserBridge {
                 }
             })
             Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(5))
+                try? await Task.sleep(for: .seconds(45))
                 self?.pending.removeValue(forKey: payload.id)?.resume(
                     returning: Response(id: payload.id, ok: false, message: "浏览器扩展响应超时。")
                 )
@@ -220,13 +228,14 @@ final class BrowserBridge {
     private func sendToSafari(_ payload: Command) async -> Response {
         await withCheckedContinuation { continuation in
             pending[payload.id] = continuation
+            safariPendingCommands[payload.id] = payload.command
             dispatchToSafari(payload)
 
             // Safari can launch before its WebExtension background page has opened
             // the native port. Retrying the idempotent preparation command closes
             // that cold-start window without risking a duplicate post.
             if payload.command == "prepareX" {
-                for delay in [2, 5, 9] {
+                for delay in [2, 5, 9, 15, 23, 32, 40] {
                     Task { @MainActor [weak self] in
                         try? await Task.sleep(for: .seconds(delay))
                         guard self?.pending[payload.id] != nil else { return }
@@ -236,9 +245,10 @@ final class BrowserBridge {
                 }
             }
             Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(20))
+                try? await Task.sleep(for: .seconds(45))
                 guard self?.pending[payload.id] != nil else { return }
                 self?.logger.error("Safari command timed out: \(payload.command, privacy: .public)")
+                self?.safariPendingCommands[payload.id] = nil
                 self?.pending.removeValue(forKey: payload.id)?.resume(
                     returning: Response(id: payload.id, ok: false, message: "Safari 扩展响应超时。")
                 )
