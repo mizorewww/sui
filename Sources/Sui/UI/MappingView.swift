@@ -13,8 +13,15 @@ final class MappingView: NSView {
     private var popups: [String: NSPopUpButton] = [:]
     private var mappings: [String: PluginID] = ["A": .telegram, "B": .x, "Y": .codex]
     private var availability: [PluginID: PluginAvailability] = [:]
+    private var panelRect = CGRect.zero
     private var stageRect = CGRect.zero
     private var railRect = CGRect.zero
+    private let buttonLocations: [String: CGPoint] = [
+        "X": CGPoint(x: 0.688148, y: 0.681111),
+        "Y": CGPoint(x: 0.751111, y: 0.776111),
+        "B": CGPoint(x: 0.814074, y: 0.681111),
+        "A": CGPoint(x: 0.751111, y: 0.586667)
+    ]
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -42,7 +49,7 @@ final class MappingView: NSView {
 
         for button in ["Y", "B", "A"] {
             let popup = NSPopUpButton(frame: .zero, pullsDown: false)
-            popup.controlSize = .large
+            popup.controlSize = .regular
             popup.font = .systemFont(ofSize: 13, weight: .medium)
             popup.target = self
             popup.action = #selector(mappingChanged(_:))
@@ -88,32 +95,40 @@ final class MappingView: NSView {
 
     override func layout() {
         super.layout()
-        let inset: CGFloat = bounds.width < 800 ? 18 : 24
-        let gap: CGFloat = bounds.width < 800 ? 14 : 20
-        let railWidth = min(292, max(224, bounds.width * 0.31))
-        railRect = CGRect(x: bounds.maxX - inset - railWidth, y: inset, width: railWidth, height: bounds.height - inset * 2)
-        stageRect = CGRect(x: inset, y: inset, width: railRect.minX - gap - inset, height: railRect.height)
+        panelRect = bounds
+        let padding: CGFloat = bounds.width < 800 ? 18 : 22
+        let gap: CGFloat = bounds.width < 800 ? 18 : 24
+        let railWidth = min(276, max(218, bounds.width * 0.30))
+        railRect = CGRect(x: bounds.maxX - padding - railWidth, y: padding,
+                          width: railWidth, height: bounds.height - padding * 2)
+        stageRect = CGRect(x: padding, y: padding,
+                           width: railRect.minX - gap - padding, height: railRect.height)
 
-        let stageHeaderHeight: CGFloat = 58
         let footerHeight: CGFloat = 56
-        let imageArea = stageRect.insetBy(dx: max(16, stageRect.width * 0.05), dy: 0)
+        let imageArea = stageRect.insetBy(dx: max(8, stageRect.width * 0.025), dy: 0)
         controllerImage.frame = CGRect(
             x: imageArea.minX,
             y: stageRect.minY + footerHeight,
             width: imageArea.width,
-            height: max(180, stageRect.height - footerHeight - stageHeaderHeight)
+            height: max(180, stageRect.height - footerHeight - 8)
         )
-        connectionLabel.frame = CGRect(x: stageRect.minX + 20, y: stageRect.minY + 28, width: stageRect.width - 40, height: 18)
-        instructionLabel.frame = CGRect(x: stageRect.minX + 20, y: stageRect.minY + 12, width: stageRect.width - 40, height: 16)
+        connectionLabel.frame = CGRect(x: stageRect.minX + 4, y: stageRect.minY + 28, width: stageRect.width - 8, height: 18)
+        instructionLabel.frame = CGRect(x: stageRect.minX + 4, y: stageRect.minY + 12, width: stageRect.width - 8, height: 16)
 
-        railTitle.frame = CGRect(x: railRect.minX + 18, y: railRect.maxY - 34, width: railRect.width - 36, height: 16)
-        railDetail.frame = CGRect(x: railRect.minX + 18, y: railRect.maxY - 52, width: railRect.width - 36, height: 16)
-        let popupX = railRect.minX + 18
-        let popupWidth = railRect.width - 36
-        let centerY = railRect.midY - 4
-        popups["Y"]?.frame = CGRect(x: popupX, y: centerY + 64, width: popupWidth, height: 40)
-        popups["B"]?.frame = CGRect(x: popupX, y: centerY - 8, width: popupWidth, height: 40)
-        popups["A"]?.frame = CGRect(x: popupX, y: centerY - 80, width: popupWidth, height: 40)
+        railTitle.frame = CGRect(x: railRect.minX, y: railRect.maxY - 24, width: railRect.width, height: 16)
+        railDetail.frame = CGRect(x: railRect.minX, y: railRect.maxY - 42, width: railRect.width, height: 16)
+        let popupX = railRect.minX
+        let popupWidth = railRect.width
+        let rendered = renderedImageRect()
+        let desiredCenter = ["Y", "B", "A"].compactMap { buttonLocations[$0] }
+            .map { rendered.minY + rendered.height * $0.y }
+            .reduce(0, +) / 3
+        let spacing = min(68, max(52, rendered.height * 0.17))
+        let centerY = min(railRect.maxY - 74 - spacing, max(railRect.minY + 24 + spacing, desiredCenter))
+        for (button, offset) in [("Y", spacing), ("B", 0), ("A", -spacing)] {
+            popups[button]?.frame = CGRect(x: popupX, y: centerY + offset - 17,
+                                            width: popupWidth, height: 34)
+        }
         overlay.frame = bounds
         needsDisplay = true
         overlay.needsDisplay = true
@@ -121,14 +136,7 @@ final class MappingView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        drawPanel(stageRect, fill: .controlBackgroundColor)
-        drawPanel(railRect, fill: NSColor.windowBackgroundColor.withAlphaComponent(0.72))
-        let divider = NSBezierPath()
-        divider.move(to: NSPoint(x: railRect.minX + 18, y: railRect.maxY - 64))
-        divider.line(to: NSPoint(x: railRect.maxX - 18, y: railRect.maxY - 64))
-        NSColor.separatorColor.withAlphaComponent(0.55).setStroke()
-        divider.lineWidth = 1
-        divider.stroke()
+        drawPanel(panelRect, fill: .controlBackgroundColor)
     }
 
     private func drawPanel(_ rect: CGRect, fill: NSColor) {
@@ -141,29 +149,31 @@ final class MappingView: NSView {
     }
 
     fileprivate func drawOverlay() {
-        let labels: [(String, NSPoint)] = [
-            ("Y", imagePoint(x: 0.7481, y: 0.7778)),
-            ("B", imagePoint(x: 0.8111, y: 0.6833)),
-            ("A", imagePoint(x: 0.7463, y: 0.5833))
-        ]
         let accent = NSColor.controlAccentColor
-        for (name, start) in labels {
-            guard let popup = popups[name] else { continue }
-            let end = NSPoint(x: popup.frame.minX - 8, y: popup.frame.midY)
-            let path = NSBezierPath()
-            path.move(to: start)
-            path.curve(to: end,
-                       controlPoint1: NSPoint(x: start.x + min(66, (end.x - start.x) * 0.45), y: start.y),
-                       controlPoint2: NSPoint(x: end.x - 40, y: end.y))
-            path.lineWidth = 1.5
-            accent.withAlphaComponent(0.48).setStroke()
-            path.stroke()
+        let rendered = renderedImageRect()
+        let radius = min(24, max(10, rendered.width * 0.032))
+        for name in ["X", "Y", "B", "A"] {
+            guard let location = buttonLocations[name] else { continue }
+            let start = NSPoint(x: rendered.minX + rendered.width * location.x,
+                                y: rendered.minY + rendered.height * location.y)
+            if let popup = popups[name] {
+                let end = NSPoint(x: popup.frame.minX - 10, y: popup.frame.midY)
+                let path = NSBezierPath()
+                path.move(to: start)
+                path.curve(to: end,
+                           controlPoint1: NSPoint(x: start.x + min(72, (end.x - start.x) * 0.42), y: start.y),
+                           controlPoint2: NSPoint(x: end.x - 34, y: end.y))
+                path.lineWidth = max(1.25, rendered.width * 0.0018)
+                accent.withAlphaComponent(0.48).setStroke()
+                path.stroke()
+            }
 
-            let circle = NSBezierPath(ovalIn: CGRect(x: start.x - 13, y: start.y - 13, width: 26, height: 26))
-            accent.setFill()
+            let circle = NSBezierPath(ovalIn: CGRect(x: start.x - radius, y: start.y - radius,
+                                                      width: radius * 2, height: radius * 2))
+            (name == "X" ? NSColor.secondaryLabelColor : accent).setFill()
             circle.fill()
             let text = NSAttributedString(string: name, attributes: [
-                .font: NSFont.systemFont(ofSize: 12, weight: .bold),
+                .font: NSFont.systemFont(ofSize: min(18, max(10, radius * 0.86)), weight: .bold),
                 .foregroundColor: NSColor.white
             ])
             let size = text.size()
@@ -171,14 +181,13 @@ final class MappingView: NSView {
         }
     }
 
-    private func imagePoint(x: CGFloat, y: CGFloat) -> NSPoint {
+    private func renderedImageRect() -> CGRect {
         guard let image = controllerImage.image, image.size.width > 0, image.size.height > 0 else { return .zero }
         let frame = controllerImage.frame
         let scale = min(frame.width / image.size.width, frame.height / image.size.height)
         let renderedSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-        let renderedRect = CGRect(x: frame.midX - renderedSize.width / 2, y: frame.midY - renderedSize.height / 2,
-                                  width: renderedSize.width, height: renderedSize.height)
-        return NSPoint(x: renderedRect.minX + renderedRect.width * x, y: renderedRect.minY + renderedRect.height * y)
+        return CGRect(x: frame.midX - renderedSize.width / 2, y: frame.midY - renderedSize.height / 2,
+                      width: renderedSize.width, height: renderedSize.height)
     }
 
     @objc private func mappingChanged(_ sender: NSPopUpButton) {
