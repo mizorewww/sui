@@ -23,6 +23,7 @@
 		6CE4E8D29E2DCB5467BA42A8 /* SuiSafariExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6BE0D06A62088A2AB2EAC069 /* SuiSafariExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		79F11146541276A4ECF956E7 /* controller.pdf in Resources */ = {isa = PBXBuildFile; fileRef = D2A23468990BADE2A57724AB /* controller.pdf */; };
 		80875F9D0B39ED5AB9F545B2 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 57B9717C1DC87FE3CE94FB10 /* background.js */; };
+		83AAB3C592BDB8603371F0D8 /* PermissionCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F851576647E620F3AA0A42C7 /* PermissionCenter.swift */; };
 		8517E2BF1DAE1C2EA5164030 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD984A694CACCCA3D85F262 /* SafariWebExtensionHandler.swift */; };
 		8AF36D6CC704749B2C98EF18 /* x-content.js in Resources */ = {isa = PBXBuildFile; fileRef = 309A51F6C3784D21997D6344 /* x-content.js */; };
 		8EE077335E2B5347946C2AF0 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 40B3D05549923F00E169D7D9 /* manifest.json */; };
@@ -30,6 +31,7 @@
 		AA5416B6BB96DFB1263F15C5 /* PluginTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA67199862389EE922EE8E2E /* PluginTypes.swift */; };
 		BDEB026037413EC74EB65938 /* sui.icns in Resources */ = {isa = PBXBuildFile; fileRef = D2ABE9C66FC039169ADAEBDD /* sui.icns */; };
 		C68203575AAEAFE63DDE4093 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = C050207C30CC06A957F13186 /* main.swift */; };
+		E3F2FE28A41F5777CE444F14 /* PermissionSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 783489DBA68109ABBE948AC4 /* PermissionSetupView.swift */; };
 		EB398498D8B7112254EE03BC /* BrowserBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19C992E204C14BAF12E31AE4 /* BrowserBridge.swift */; };
 		F8D5B85F56B3800370AED74C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07681A3B92076C53D0CAF4F3 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
@@ -91,6 +93,7 @@
 		57B9717C1DC87FE3CE94FB10 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = background.js; sourceTree = "<group>"; };
 		604D16F239F6B9472BB7B26B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		6BE0D06A62088A2AB2EAC069 /* SuiSafariExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SuiSafariExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		783489DBA68109ABBE948AC4 /* PermissionSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSetupView.swift; sourceTree = "<group>"; };
 		7AE5691E46203CBF6C42348B /* BrowserExtension */ = {isa = PBXFileReference; lastKnownFileType = folder; path = BrowserExtension; sourceTree = SOURCE_ROOT; };
 		8158A79CD99D4400D26C1A32 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		92C85227F6A166A776A314DF /* BuiltinPlugins.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltinPlugins.swift; sourceTree = "<group>"; };
@@ -103,6 +106,7 @@
 		D2A23468990BADE2A57724AB /* controller.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = controller.pdf; sourceTree = "<group>"; };
 		D2ABE9C66FC039169ADAEBDD /* sui.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = sui.icns; sourceTree = "<group>"; };
 		DFD984A694CACCCA3D85F262 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		F851576647E620F3AA0A42C7 /* PermissionCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -149,6 +153,7 @@
 				59F4D49DDBE8AD982AB21887 /* App */,
 				03C8CDE239DF5B695B0D1F40 /* Automation */,
 				8F52EFC338E0B5C7C69062DB /* Controller */,
+				9276298456BE9DC45A0DCCD0 /* Permissions */,
 				9FCDF8AA8242EF3DCE049F89 /* Plugins */,
 				DDD368C0E16F975CA24BE539 /* Speech */,
 				5F117E3DF3AEBCD28C4BC898 /* UI */,
@@ -172,6 +177,7 @@
 			isa = PBXGroup;
 			children = (
 				5139EE30282478918DDB4932 /* MappingView.swift */,
+				783489DBA68109ABBE948AC4 /* PermissionSetupView.swift */,
 				604D16F239F6B9472BB7B26B /* SettingsView.swift */,
 			);
 			path = UI;
@@ -201,6 +207,14 @@
 				99E80B7001927EC4622A0129 /* ControllerService.swift */,
 			);
 			path = Controller;
+			sourceTree = "<group>";
+		};
+		9276298456BE9DC45A0DCCD0 /* Permissions */ = {
+			isa = PBXGroup;
+			children = (
+				F851576647E620F3AA0A42C7 /* PermissionCenter.swift */,
+			);
+			path = Permissions;
 			sourceTree = "<group>";
 		};
 		9FCDF8AA8242EF3DCE049F89 /* Plugins */ = {
@@ -391,6 +405,8 @@
 				0DE780936B0909EAD877491D /* MappingView.swift in Sources */,
 				4F7439A374F2D81380FE35AC /* NativeAutomationHost.swift in Sources */,
 				69A2568E3607F667A5B9AC51 /* PTTCoordinator.swift in Sources */,
+				83AAB3C592BDB8603371F0D8 /* PermissionCenter.swift in Sources */,
+				E3F2FE28A41F5777CE444F14 /* PermissionSetupView.swift in Sources */,
 				10D6A0AF50770BF33473BC33 /* PluginHost.swift in Sources */,
 				AA5416B6BB96DFB1263F15C5 /* PluginTypes.swift in Sources */,
 				44FDC6DB2549B2BDDE317FF4 /* SettingsView.swift in Sources */,
@@ -535,7 +551,7 @@
 		C0909156090B225B8D422ADD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Sui/Sui.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Sources/Sui/Info.plist;
@@ -645,7 +661,7 @@
 		FD6439C39DBA79130250D8FF /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Sui/Sui.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Sources/Sui/Info.plist;

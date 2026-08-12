@@ -4,6 +4,7 @@ import AppKit
 final class MainWindowController: NSWindowController, NSWindowDelegate {
     private let mappingView = MappingView()
     private let settingsView = SettingsView()
+    private let permissionView = PermissionSetupView()
     private let content = NSVisualEffectView()
     private let pageContainer = NSView()
     private let statusLabel = NSTextField(labelWithString: "Ready")
@@ -18,6 +19,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     var onControllerSelected: ((String?) -> Void)?
     var onPluginToggled: ((PluginID, Bool) -> Void)?
     var onRecovery: ((PluginRecoveryAction) -> Void)?
+    var onRequestPermissions: (() -> Void)?
+    var onOpenPermissionSettings: ((PermissionCenter.Kind) -> Void)?
 
     init() {
         let window = NSWindow(
@@ -30,7 +33,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
-        window.minSize = CGSize(width: 820, height: 560)
+        window.minSize = CGSize(width: 760, height: 520)
+        window.contentMinSize = CGSize(width: 760, height: 492)
+        window.setFrameAutosaveName("sui.main-window")
         window.center()
         super.init(window: window)
         window.delegate = self
@@ -53,6 +58,11 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     func setState(_ state: PTTCoordinator.State) {
         statusLabel.stringValue = state.label
         statusLabel.textColor = state == .idle ? .secondaryLabelColor : .controlAccentColor
+    }
+
+    func showPermissions(_ snapshot: PermissionCenter.Snapshot, force: Bool = false) {
+        permissionView.update(snapshot)
+        if force || !snapshot.isReady { showPage(permissionView); settingsButton.isHidden = true }
     }
 
     func showFailure(title: String, message: String, actionTitle: String?, action: PluginRecoveryAction?) {
@@ -94,11 +104,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         settingsButton.action = #selector(showSettings)
 
         pageContainer.wantsLayer = true
-        pageContainer.layer?.cornerRadius = 18
-        pageContainer.layer?.cornerCurve = .continuous
-        pageContainer.layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.68).cgColor
-        pageContainer.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.32).cgColor
-        pageContainer.layer?.borderWidth = 1
+        pageContainer.layer?.backgroundColor = NSColor.clear.cgColor
 
         errorBox.boxType = .custom
         errorBox.cornerRadius = 12
@@ -145,28 +151,29 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         settingsView.onBack = { [weak self] in self?.showMapping() }
         settingsView.onControllerSelected = { [weak self] in self?.onControllerSelected?($0) }
         settingsView.onPluginToggled = { [weak self] in self?.onPluginToggled?($0, $1) }
+        permissionView.onGrant = { [weak self] in self?.onRequestPermissions?() }
+        permissionView.onOpenSettings = { [weak self] in self?.onOpenPermissionSettings?($0) }
+        permissionView.onContinue = { [weak self] in self?.showMapping() }
     }
 
     @objc private func showSettings() {
-        mappingView.removeFromSuperview()
-        settingsView.translatesAutoresizingMaskIntoConstraints = false
-        pageContainer.addSubview(settingsView)
-        NSLayoutConstraint.activate([
-            settingsView.leadingAnchor.constraint(equalTo: pageContainer.leadingAnchor), settingsView.trailingAnchor.constraint(equalTo: pageContainer.trailingAnchor),
-            settingsView.topAnchor.constraint(equalTo: pageContainer.topAnchor), settingsView.bottomAnchor.constraint(equalTo: pageContainer.bottomAnchor)
-        ])
+        showPage(settingsView)
         settingsButton.isHidden = true
     }
 
     private func showMapping() {
-        settingsView.removeFromSuperview()
-        mappingView.translatesAutoresizingMaskIntoConstraints = false
-        pageContainer.addSubview(mappingView)
-        NSLayoutConstraint.activate([
-            mappingView.leadingAnchor.constraint(equalTo: pageContainer.leadingAnchor), mappingView.trailingAnchor.constraint(equalTo: pageContainer.trailingAnchor),
-            mappingView.topAnchor.constraint(equalTo: pageContainer.topAnchor), mappingView.bottomAnchor.constraint(equalTo: pageContainer.bottomAnchor)
-        ])
+        showPage(mappingView)
         settingsButton.isHidden = false
+    }
+
+    private func showPage(_ view: NSView) {
+        pageContainer.subviews.filter { $0 !== errorBox }.forEach { $0.removeFromSuperview() }
+        view.translatesAutoresizingMaskIntoConstraints = false
+        pageContainer.addSubview(view, positioned: .below, relativeTo: errorBox)
+        NSLayoutConstraint.activate([
+            view.leadingAnchor.constraint(equalTo: pageContainer.leadingAnchor), view.trailingAnchor.constraint(equalTo: pageContainer.trailingAnchor),
+            view.topAnchor.constraint(equalTo: pageContainer.topAnchor), view.bottomAnchor.constraint(equalTo: pageContainer.bottomAnchor)
+        ])
     }
 
     @objc private func recover() { if let recoveryAction { onRecovery?(recoveryAction) } }

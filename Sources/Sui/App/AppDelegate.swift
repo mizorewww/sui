@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let controllers = ControllerService()
     private let mainWindow = MainWindowController()
     private let statusItem = StatusItemController()
+    private let permissionCenter = PermissionCenter()
 
     private var devices: [ControllerService.Device] = []
     private var selectedControllerKey: String?
@@ -22,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controllers.start()
         refreshUI()
         mainWindow.show()
+        mainWindow.showPermissions(permissionCenter.snapshot)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
@@ -43,6 +45,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.refreshUI()
         }
         mainWindow.onRecovery = { [weak self] action in self?.plugins.perform(action) }
+        mainWindow.onRequestPermissions = { [weak self] in
+            guard let self else { return }
+            Task {
+                await permissionCenter.requestAll()
+                mainWindow.showPermissions(permissionCenter.snapshot, force: true)
+            }
+        }
+        mainWindow.onOpenPermissionSettings = { [weak self] kind in self?.permissionCenter.openSettings(for: kind) }
 
         controllers.onDevicesChanged = { [weak self] devices in
             self?.devices = devices

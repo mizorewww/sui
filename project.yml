@@ -29,13 +29,14 @@ targets:
         buildPhase: resources
     entitlements:
       path: Sources/Sui/Sui.entitlements
+      properties:
+        com.apple.security.device.audio-input: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mizore.sui
         PRODUCT_NAME: sui
         INFOPLIST_FILE: Sources/Sui/Info.plist
         CODE_SIGN_ENTITLEMENTS: Sources/Sui/Sui.entitlements
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
     dependencies:
       - target: BrowserBridgeHelper
         embed: true
