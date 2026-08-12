@@ -2,16 +2,18 @@
 
 ## 构建
 
-- [ ] Xcode 27 使用 Apple Development 证书编译成功。
-- [ ] Debug App 可启动，Hardened Runtime 与麦克风权限描述存在。
+- [x] Xcode 27 使用 Apple Development 证书编译成功。
+- [x] Debug App 可启动，Hardened Runtime、麦克风说明与 audio-input entitlement 存在。
 - [ ] `.env`、Derived Data 和用户 Xcode 状态不进入 Git。
 
 ## 界面
 
-- [ ] 首屏是一张真实矢量手柄图，而不是设置表单。
-- [ ] A/B/Y 连线分别落到 Telegram、X.com、Codex 下拉菜单。
-- [ ] 无目标 App 时相应选项灰置。
-- [ ] 设置仍在同一窗口，只显示手柄与插件列表。
+- [x] 首屏是一张透明背景的真实矢量手柄图，而不是白色画布。
+- [x] A/B/Y 连线分别落到 Telegram、X.com、Codex 下拉菜单。
+- [x] 无目标 App 时相应选项灰置。
+- [x] 设置仍在同一窗口，只显示手柄与插件列表。
+- [x] 760×520、920×610 与系统 Zoom 尺寸均通过真实截图验收。
+- [x] 系统麦克风设置已注册 sui，并显示水滴 App 图标。
 - [ ] 关闭窗口后菜单栏图标仍可重新打开。
 
 ## 行为
@@ -26,4 +28,3 @@
 ## 人工测试安全线
 
 自动验收不实际发送 Telegram/Codex 消息，也不发布 X 帖子。端到端发送必须由用户打开明确的测试会话后再执行。
-
