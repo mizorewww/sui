@@ -1,0 +1,94 @@
+name: Sui
+options:
+  bundleIdPrefix: com.mizore
+  deploymentTarget:
+    macOS: "27.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: LT98S43NKA
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "27.0"
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+targets:
+  Sui:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/Sui
+        excludes:
+          - Info.plist
+          - Sui.entitlements
+      - path: Assets/controller.svg
+        buildPhase: resources
+      - path: sui.icns
+        buildPhase: resources
+      - path: BrowserExtension
+        type: folder
+        buildPhase: resources
+    info:
+      path: Sources/Sui/Info.plist
+    entitlements:
+      path: Sources/Sui/Sui.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mizore.sui
+        PRODUCT_NAME: sui
+        INFOPLIST_FILE: Sources/Sui/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Sources/Sui/Sui.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+    dependencies:
+      - target: BrowserBridgeHelper
+        embed: true
+        codeSign: true
+        copy:
+          destination: executables
+          subpath: Helpers
+      - target: SuiSafariExtension
+        embed: true
+        codeSign: true
+  BrowserBridgeHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - Sources/BrowserBridgeHelper
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mizore.sui.browserbridge
+        PRODUCT_NAME: sui-browser-bridge
+        SKIP_INSTALL: YES
+        CODE_SIGNING_ALLOWED: YES
+  SuiSafariExtension:
+    type: app-extension
+    platform: macOS
+    sources:
+      - SafariExtension/Sources
+      - path: BrowserExtension/manifest.json
+        buildPhase: resources
+      - path: BrowserExtension/background.js
+        buildPhase: resources
+      - path: BrowserExtension/x-content.js
+        buildPhase: resources
+    info:
+      path: SafariExtension/Info.plist
+    entitlements:
+      path: SafariExtension/SafariExtension.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mizore.sui.SafariExtension
+        PRODUCT_NAME: sui Browser Bridge
+        INFOPLIST_FILE: SafariExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: SafariExtension/SafariExtension.entitlements
+        SKIP_INSTALL: YES
+schemes:
+  Sui:
+    build:
+      targets:
+        Sui: all
+        BrowserBridgeHelper: all
+        SuiSafariExtension: all
+    run:
+      config: Debug
+    archive:
+      config: Release

@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "sui Browser Bridge",
+  "version": "0.1.0",
+  "description": "Posts your sui push-to-talk transcript to X.com.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1UKQj+PPzictlj1ywe+8vt6kVWmEfRY3Vlrf1nr5ruHe4d40V2uxo+Uq2OHfuuVmBvbvi1xlKBWc9vBk6aWu1ZLJMGvdcAJ/lwkAMeg4y9ksPGPjJ9lhPvA9swAEFnjQMnjDII+Af2e3zkWEB3HgLVpzDdhiN4s8l+raPqR8N/3R80SlChCgXfJhJWiLKHdxWidCO9HfgMxtWLLpAFDQdaIFMVTRcoTsRjNIjHeIwoyLFJq8q2qtoktnva+MrNqmjNFX1jmDxgv4yEi27T+Eu9JC68riS4mUf0fuZHLqPkAHC6Tj5o7DF/ufzNeB0DBWd7JgnYac3Df4OrkPSKhRnwIDAQAB",
+  "permissions": ["nativeMessaging", "tabs"],
+  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{
+    "matches": ["https://x.com/*", "https://twitter.com/*"],
+    "js": ["x-content.js"],
+    "run_at": "document_idle"
+  }],
+  "action": { "default_title": "sui Browser Bridge" }
+}
+
