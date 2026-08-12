@@ -10,8 +10,7 @@
   "content_scripts": [{
     "matches": ["https://x.com/*", "https://twitter.com/*"],
     "js": ["x-content.js"],
-    "run_at": "document_idle"
+    "run_at": "document_start"
   }],
   "action": { "default_title": "sui Browser Bridge" }
 }
-

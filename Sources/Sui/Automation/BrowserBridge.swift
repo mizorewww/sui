@@ -63,13 +63,16 @@ final class BrowserBridge {
         }
         if connection != nil {
             NSWorkspace.shared.open(URL(string: "https://x.com/compose/post")!)
+        } else {
+            await openXComposerInSafari()
+            try? await Task.sleep(for: .milliseconds(700))
         }
         let response = await send(command: "prepareX", text: nil)
         if response.ok { return .ready }
         if response.message == "Safari 扩展响应超时。" {
             return .notReady(
-                title: "Safari 扩展未启用",
-                message: "请在 Safari 设置的“扩展”中勾选 sui Browser Bridge。",
+                title: "Safari 扩展没有响应",
+                message: "请确认 Safari 正在运行，并允许 sui Browser Bridge 访问 X.com。",
                 actionTitle: "打开 Safari 设置",
                 action: .openSafariSettings
             )
@@ -123,6 +126,7 @@ final class BrowserBridge {
     }
 
     private func acceptSafariResponse(_ connection: NWConnection) {
+        logger.notice("Safari native response connection accepted")
         safariIncoming[ObjectIdentifier(connection)] = Data()
         connection.start(queue: .global(qos: .utility))
         receiveSafariResponse(on: connection)
@@ -149,7 +153,11 @@ final class BrowserBridge {
         while let newline = buffer.firstIndex(of: 0x0A) {
             let packet = buffer.prefix(upTo: newline)
             buffer.removeSubrange(...newline)
-            guard let response = try? JSONDecoder().decode(Response.self, from: packet) else { continue }
+            guard let response = try? JSONDecoder().decode(Response.self, from: packet) else {
+                logger.error("Invalid Safari response: \(String(decoding: packet, as: UTF8.self), privacy: .public)")
+                continue
+            }
+            logger.notice("Safari response received: \(response.ok), \(response.message ?? "no message", privacy: .public)")
             pending.removeValue(forKey: response.id)?.resume(returning: response)
         }
         safariIncoming[key] = buffer
@@ -212,22 +220,70 @@ final class BrowserBridge {
     private func sendToSafari(_ payload: Command) async -> Response {
         await withCheckedContinuation { continuation in
             pending[payload.id] = continuation
-            var userInfo: [String: Any] = [
-                "id": payload.id.uuidString,
-                "command": payload.command
-            ]
-            if let text = payload.text { userInfo["text"] = text }
-            SFSafariApplication.dispatchMessage(
-                withName: "sui-command",
-                toExtensionWithIdentifier: "com.mizore.sui.SafariExtension",
-                userInfo: userInfo,
-                completionHandler: nil
-            )
+            dispatchToSafari(payload)
+
+            // Safari can launch before its WebExtension background page has opened
+            // the native port. Retrying the idempotent preparation command closes
+            // that cold-start window without risking a duplicate post.
+            if payload.command == "prepareX" {
+                for delay in [2, 5, 9] {
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(for: .seconds(delay))
+                        guard self?.pending[payload.id] != nil else { return }
+                        self?.logger.notice("Retrying Safari preparation after \(delay)s")
+                        self?.dispatchToSafari(payload)
+                    }
+                }
+            }
             Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(7))
+                try? await Task.sleep(for: .seconds(20))
+                guard self?.pending[payload.id] != nil else { return }
+                self?.logger.error("Safari command timed out: \(payload.command, privacy: .public)")
                 self?.pending.removeValue(forKey: payload.id)?.resume(
                     returning: Response(id: payload.id, ok: false, message: "Safari 扩展响应超时。")
                 )
+            }
+        }
+    }
+
+    private func dispatchToSafari(_ payload: Command) {
+        logger.notice("Dispatching \(payload.command, privacy: .public) to Safari")
+        var userInfo: [String: Any] = [
+            "id": payload.id.uuidString,
+            "command": payload.command
+        ]
+        if let text = payload.text { userInfo["text"] = text }
+        SFSafariApplication.dispatchMessage(
+            withName: "sui-command",
+            toExtensionWithIdentifier: "com.mizore.sui.SafariExtension",
+            userInfo: userInfo
+        ) { [weak self] error in
+            guard let error else { return }
+            Task { @MainActor in
+                self?.logger.error("Safari dispatch failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    private func openXComposerInSafari() async {
+        guard let composeURL = URL(string: "https://x.com/compose/post"),
+              let safariURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Safari")
+        else { return }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        await withCheckedContinuation { continuation in
+            NSWorkspace.shared.open(
+                [composeURL],
+                withApplicationAt: safariURL,
+                configuration: configuration
+            ) { [weak self] _, error in
+                if let error {
+                    Task { @MainActor in
+                        self?.logger.error("Unable to open X in Safari: \(error.localizedDescription, privacy: .public)")
+                    }
+                }
+                continuation.resume()
             }
         }
     }

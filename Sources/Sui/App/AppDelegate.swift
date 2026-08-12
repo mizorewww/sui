@@ -33,6 +33,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mainWindow.show()
         mainWindow.showPermissions(permissionCenter.snapshot)
         logger.notice("sui finished launching")
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--debug-safari-bridge") {
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                let result = await browserBridge.prepareX()
+                switch result {
+                case .ready:
+                    logger.notice("Safari bridge diagnostic: ready")
+                case .notReady(let title, let message, _, _):
+                    logger.error("Safari bridge diagnostic: \(title, privacy: .public) — \(message, privacy: .public)")
+                }
+            }
+        }
+#endif
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }

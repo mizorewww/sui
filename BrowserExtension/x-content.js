@@ -1,7 +1,20 @@
-chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-  handle(request).then(sendResponse).catch((error) => sendResponse({ ok: false, message: error.message }));
-  return true;
-});
+const contentAPI = globalThis.browser ?? globalThis.chrome;
+
+// Loading an X page must wake Safari's MV3 background worker so it can open
+// the native-messaging port before the containing app dispatches a command.
+const readyPing = contentAPI.runtime.sendMessage({ type: "sui-content-ready" });
+if (readyPing?.catch) readyPing.catch(() => {});
+
+if (globalThis.browser) {
+  contentAPI.runtime.onMessage.addListener((request) =>
+    handle(request).catch((error) => ({ ok: false, message: errorText(error) }))
+  );
+} else {
+  contentAPI.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+    handle(request).then(sendResponse).catch((error) => sendResponse({ ok: false, message: errorText(error) }));
+    return true;
+  });
+}
 
 async function handle(request) {
   if (location.pathname.startsWith("/i/flow/login") || document.querySelector('input[autocomplete="username"]')) {
@@ -27,7 +40,7 @@ async function handle(request) {
 }
 
 async function findComposer() {
-  for (let attempt = 0; attempt < 30; attempt += 1) {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
     const composer = document.querySelector('[data-testid="tweetTextarea_0"][contenteditable="true"]');
     if (composer) return composer;
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -35,3 +48,8 @@ async function findComposer() {
   return null;
 }
 
+function errorText(error) {
+  return typeof error?.message === "string" && error.message
+    ? error.message
+    : "X.com 页面脚本执行失败。";
+}
