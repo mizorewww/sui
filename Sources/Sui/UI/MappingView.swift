@@ -23,7 +23,10 @@ final class MappingView: NSView {
         controllerImage.imageScaling = .scaleProportionallyUpOrDown
         controllerImage.setAccessibilityLabel("Game controller")
         if let url = Bundle.main.url(forResource: "controller", withExtension: "pdf") {
-            controllerImage.image = NSImage(contentsOf: url)
+            let image = NSImage(contentsOf: url)
+            image?.isTemplate = true
+            controllerImage.image = image
+            controllerImage.contentTintColor = .labelColor
         }
         addSubview(controllerImage)
 

@@ -37,6 +37,7 @@ targets:
         PRODUCT_NAME: sui
         INFOPLIST_FILE: Sources/Sui/Info.plist
         CODE_SIGN_ENTITLEMENTS: Sources/Sui/Sui.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
       - target: BrowserBridgeHelper
         embed: true
