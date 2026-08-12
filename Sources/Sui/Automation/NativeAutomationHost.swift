@@ -136,9 +136,18 @@ final class NativeAutomationHost {
             }
         }
 
-        var queue: [AXUIElement] = [root]
+        let searchRoot: AXUIElement = {
+            for attribute in [kAXFocusedWindowAttribute, kAXMainWindowAttribute] {
+                guard let value = valueAttribute(attribute, of: root),
+                      CFGetTypeID(value) == AXUIElementGetTypeID() else { continue }
+                return unsafeDowncast(value, to: AXUIElement.self)
+            }
+            return root
+        }()
+        var queue: [AXUIElement] = [searchRoot]
         var visited = Set<CFHashCode>()
         var fallback: AXUIElement?
+        var unlabeledTextAreas: [AXUIElement] = []
         var inspected = 0
 
         while !queue.isEmpty, inspected < 5_000 {
@@ -161,6 +170,13 @@ final class NativeAutomationHost {
                 if fallback == nil, boolAttribute(kAXFocusedAttribute, of: element) == true {
                     fallback = element
                 }
+                let isTextArea = role == kAXTextAreaRole as String
+                let isHidden = boolAttribute(kAXHiddenAttribute, of: element) == true
+                let disallowed = ["search", "find", "filter", "terminal", "搜索"]
+                if isTextArea, !isHidden,
+                   !disallowed.contains(where: { match.text.contains($0) }) {
+                    unlabeledTextAreas.append(element)
+                }
             }
             for attribute in childAttributes {
                 guard let value = valueAttribute(attribute, of: element) else { continue }
@@ -172,6 +188,12 @@ final class NativeAutomationHost {
             }
         }
         logger.debug("Inspected \(inspected) accessibility elements")
+        if let candidate = unlabeledTextAreas.last {
+            logger.notice(
+                "Using last visible unlabeled text area from \(unlabeledTextAreas.count) candidate(s) in the focused window"
+            )
+            return candidate
+        }
         return fallback
     }
 
