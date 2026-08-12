@@ -61,7 +61,7 @@ final class NativeAutomationHost {
             throw SuiError.automation("无法把目标应用切换到前台。")
         }
         let focusError = AXUIElementSetAttributeValue(target.composer, kAXFocusedAttribute as CFString, kCFBooleanTrue)
-        guard focusError == .success else {
+        guard focusError == .success || boolAttribute(kAXFocusedAttribute, of: target.composer) == true else {
             throw SuiError.automation("无法聚焦目标输入框。")
         }
 
@@ -69,7 +69,10 @@ final class NativeAutomationHost {
         NSPasteboard.general.setString(text, forType: .string)
         try await Task.sleep(for: .milliseconds(120))
         postKey(9, flags: .maskCommand)
-        try await Task.sleep(for: .milliseconds(100))
+        // Codex's React editor applies a paste asynchronously. Give it one frame
+        // plus event propagation time before Return so the freshly pasted text is
+        // the content that gets submitted.
+        try await Task.sleep(for: .milliseconds(250))
         postKey(36, flags: [])
     }
 
@@ -118,14 +121,19 @@ final class NativeAutomationHost {
                   CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
             return unsafeDowncast(value, to: AXUIElement.self)
         }()
-        // Telegram exposes its current message composer as the app's focused
-        // AXTextArea, but supplies no title, help, placeholder, or description.
-        // A search box is an AXTextField, so accepting the focused text area
-        // avoids both the false negative and the "paste into search" failure.
-        if let focusedElement,
-           stringAttribute(kAXRoleAttribute, of: focusedElement) == kAXTextAreaRole as String,
-           boolAttribute(kAXEnabledAttribute, of: focusedElement) ?? true {
-            return focusedElement
+        // Telegram exposes an AXTextArea with no useful labels. Codex's Chromium
+        // editor can instead expose a focused AXGroup whose AXValue is settable.
+        // Accept the latter only when its metadata matches the plugin hints so a
+        // focused terminal or search control never becomes the send target.
+        if let focusedElement, boolAttribute(kAXEnabledAttribute, of: focusedElement) ?? true {
+            let role = stringAttribute(kAXRoleAttribute, of: focusedElement) ?? ""
+            if role == kAXTextAreaRole as String {
+                return focusedElement
+            }
+            if isValueSettable(focusedElement), metadata(of: focusedElement, role: role, hints: hints).matches {
+                logger.notice("Using focused value-settable composer with role \(role, privacy: .public)")
+                return focusedElement
+            }
         }
 
         var queue: [AXUIElement] = [root]
@@ -140,15 +148,14 @@ final class NativeAutomationHost {
             inspected += 1
             let role = stringAttribute(kAXRoleAttribute, of: element) ?? ""
             let enabled = boolAttribute(kAXEnabledAttribute, of: element) ?? true
-            let editableRole = role == kAXTextAreaRole as String || role == kAXTextFieldRole as String
-            if editableRole && enabled {
-            let haystack = [
-                stringAttribute(kAXDescriptionAttribute, of: element),
-                stringAttribute(kAXTitleAttribute, of: element),
-                stringAttribute(kAXHelpAttribute, of: element),
-                stringAttribute(kAXPlaceholderValueAttribute, of: element)
-            ].compactMap { $0 }.joined(separator: " ").lowercased()
-                if hints.isEmpty || hints.contains(where: { haystack.contains($0.lowercased()) }) {
+            let textRole = role == kAXTextAreaRole as String || role == kAXTextFieldRole as String
+            let valueSettable = isValueSettable(element)
+            if (textRole || valueSettable) && enabled {
+                let match = metadata(of: element, role: role, hints: hints)
+                if hints.isEmpty || match.matches {
+                    logger.notice(
+                        "Matched composer role \(role, privacy: .public), valueSettable=\(valueSettable)"
+                    )
                     return element
                 }
                 if fallback == nil, boolAttribute(kAXFocusedAttribute, of: element) == true {
@@ -166,6 +173,27 @@ final class NativeAutomationHost {
         }
         logger.debug("Inspected \(inspected) accessibility elements")
         return fallback
+    }
+
+    private func metadata(of element: AXUIElement, role: String, hints: [String]) -> (text: String, matches: Bool) {
+        let text = [
+            role,
+            stringAttribute(kAXSubroleAttribute, of: element),
+            stringAttribute(kAXRoleDescriptionAttribute, of: element),
+            stringAttribute(kAXDescriptionAttribute, of: element),
+            stringAttribute(kAXTitleAttribute, of: element),
+            stringAttribute(kAXHelpAttribute, of: element),
+            stringAttribute(kAXPlaceholderValueAttribute, of: element),
+            stringAttribute(kAXIdentifierAttribute, of: element),
+            stringAttribute(kAXDOMIdentifierAttribute, of: element)
+        ].compactMap { $0 }.joined(separator: " ").lowercased()
+        return (text, hints.contains { text.contains($0.lowercased()) })
+    }
+
+    private func isValueSettable(_ element: AXUIElement) -> Bool {
+        var settable = DarwinBoolean(false)
+        return AXUIElementIsAttributeSettable(element, kAXValueAttribute as CFString, &settable) == .success
+            && settable.boolValue
     }
 
     private func valueAttribute(_ name: String, of element: AXUIElement) -> CFTypeRef? {

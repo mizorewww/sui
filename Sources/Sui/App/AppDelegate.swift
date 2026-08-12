@@ -48,6 +48,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+        if ProcessInfo.processInfo.arguments.contains("--debug-codex-bridge") {
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                let result = await plugins.plugin(.codex)?.prepare()
+                switch result {
+                case .ready:
+                    logger.notice("Codex bridge diagnostic: ready")
+                case .notReady(let title, let message, _, _):
+                    logger.error("Codex bridge diagnostic: \(title, privacy: .public) — \(message, privacy: .public)")
+                case nil:
+                    logger.error("Codex bridge diagnostic: plugin unavailable")
+                }
+            }
+        }
 #endif
     }
 

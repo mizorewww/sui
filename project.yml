@@ -96,8 +96,6 @@ schemes:
     build:
       targets:
         Sui: all
-        BrowserBridgeHelper: all
-        SuiSafariExtension: all
       postActions:
         - name: Install signed sui in Applications
           settingsTarget: Sui

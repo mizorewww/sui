@@ -4,8 +4,7 @@
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES"
-      runPostActionsOnFailure = "NO">
+      buildImplicitDependencies = "YES">
       <PostActions>
          <ExecutionAction
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
@@ -16,7 +15,7 @@
                   <BuildableReference
                      BuildableIdentifier = "primary"
                      BlueprintIdentifier = "FB459B2D898C13016780E426"
-                     BuildableName = "Sui.app"
+                     BuildableName = "sui.app"
                      BlueprintName = "Sui"
                      ReferencedContainer = "container:Sui.xcodeproj">
                   </BuildableReference>
@@ -33,37 +32,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "05E3F977050A0AF35B6CBF51"
-               BuildableName = "BrowserBridgeHelper"
-               BlueprintName = "BrowserBridgeHelper"
-               ReferencedContainer = "container:Sui.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "FB459B2D898C13016780E426"
-               BuildableName = "Sui.app"
+               BuildableName = "sui.app"
                BlueprintName = "Sui"
-               ReferencedContainer = "container:Sui.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "57EA329E54F088716B60C952"
-               BuildableName = "SuiSafariExtension.appex"
-               BlueprintName = "SuiSafariExtension"
                ReferencedContainer = "container:Sui.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -73,14 +44,13 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      onlyGenerateCoverageForSpecifiedTargets = "NO">
+      shouldUseLaunchSchemeArgsEnv = "YES">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "05E3F977050A0AF35B6CBF51"
-            BuildableName = "BrowserBridgeHelper"
-            BlueprintName = "BrowserBridgeHelper"
+            BlueprintIdentifier = "FB459B2D898C13016780E426"
+            BuildableName = "sui.app"
+            BlueprintName = "Sui"
             ReferencedContainer = "container:Sui.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -101,14 +71,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "05E3F977050A0AF35B6CBF51"
-            BuildableName = "BrowserBridgeHelper"
-            BlueprintName = "BrowserBridgeHelper"
+            BlueprintIdentifier = "FB459B2D898C13016780E426"
+            BuildableName = "sui.app"
+            BlueprintName = "Sui"
             ReferencedContainer = "container:Sui.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -120,9 +88,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "05E3F977050A0AF35B6CBF51"
-            BuildableName = "BrowserBridgeHelper"
-            BlueprintName = "BrowserBridgeHelper"
+            BlueprintIdentifier = "FB459B2D898C13016780E426"
+            BuildableName = "sui.app"
+            BlueprintName = "Sui"
             ReferencedContainer = "container:Sui.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
