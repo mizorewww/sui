@@ -6,6 +6,24 @@
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES"
       runPostActionsOnFailure = "NO">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Install signed sui in Applications"
+               scriptText = "&quot;$SRCROOT/scripts/install-app.sh&quot; &quot;$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME&quot;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "FB459B2D898C13016780E426"
+                     BuildableName = "Sui.app"
+                     BlueprintName = "Sui"
+                     ReferencedContainer = "container:Sui.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"

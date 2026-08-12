@@ -11,6 +11,10 @@ settings:
     MACOSX_DEPLOYMENT_TARGET: "27.0"
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
+packages:
+  MLXAudio:
+    url: https://github.com/Blaizzy/mlx-audio-swift
+    revision: 4266f988d170a83017d1e82e2e4654602f277f1d
 targets:
   Sui:
     type: application
@@ -39,6 +43,10 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Sources/Sui/Sui.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
+      - package: MLXAudio
+        product: MLXAudioCore
+      - package: MLXAudio
+        product: MLXAudioSTT
       - target: BrowserBridgeHelper
         embed: true
         codeSign: true
@@ -90,6 +98,10 @@ schemes:
         Sui: all
         BrowserBridgeHelper: all
         SuiSafariExtension: all
+      postActions:
+        - name: Install signed sui in Applications
+          settingsTarget: Sui
+          script: '"$SRCROOT/scripts/install-app.sh" "$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME"'
     run:
       config: Debug
     archive:

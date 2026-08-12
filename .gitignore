@@ -2,6 +2,7 @@
 .env
 DerivedData/
 .derived/
+.packages/
 build/
 *.xcuserstate
 xcuserdata/

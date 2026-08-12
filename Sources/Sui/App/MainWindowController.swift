@@ -14,10 +14,15 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     private let errorMessage = NSTextField(wrappingLabelWithString: "")
     private let recoveryButton = NSButton()
     private var recoveryAction: PluginRecoveryAction?
+    private var downloadPanel: NSPanel?
+    private var downloadProgress: NSProgressIndicator?
+    private var downloadStatus: NSTextField?
 
     var onMappingChanged: ((String, PluginID) -> Void)?
     var onControllerSelected: ((String?) -> Void)?
     var onPluginToggled: ((PluginID, Bool) -> Void)?
+    var onQwenToggled: ((Bool) -> Void)?
+    var onCancelQwenDownload: (() -> Void)?
     var onRecovery: ((PluginRecoveryAction) -> Void)?
     var onRequestPermissions: (() -> Void)?
     var onOpenPermissionSettings: ((PermissionCenter.Kind) -> Void)?
@@ -51,9 +56,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         window?.makeKeyAndOrderFront(nil)
     }
 
-    func update(mappings: [String: PluginID], availability: [PluginID: PluginAvailability], devices: [ControllerService.Device], selectedKey: String?, pluginHost: PluginHost) {
+    func update(mappings: [String: PluginID], availability: [PluginID: PluginAvailability], devices: [ControllerService.Device], selectedKey: String?, pluginHost: PluginHost, qwenEnabled: Bool) {
         mappingView.configure(mappings: mappings, availability: availability, hasController: !devices.isEmpty)
-        settingsView.configure(devices: devices, selectedKey: selectedKey, pluginHost: pluginHost)
+        settingsView.configure(devices: devices, selectedKey: selectedKey, pluginHost: pluginHost, qwenEnabled: qwenEnabled)
     }
 
     func setState(_ state: PTTCoordinator.State) {
@@ -74,6 +79,26 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         recoveryButton.isHidden = actionTitle == nil
         errorBox.isHidden = false
         show()
+    }
+
+    func showQwenDownload(progress: Double = 0, status: String = "准备下载…") {
+        if downloadPanel == nil { buildDownloadPanel() }
+        guard let window, let panel = downloadPanel else { return }
+        downloadProgress?.doubleValue = progress * 100
+        downloadStatus?.stringValue = status
+        show()
+        if panel.sheetParent == nil { window.beginSheet(panel) }
+    }
+
+    func updateQwenDownload(progress: Double, status: String) {
+        downloadProgress?.doubleValue = progress * 100
+        downloadStatus?.stringValue = status
+    }
+
+    func closeQwenDownload() {
+        guard let panel = downloadPanel else { return }
+        if let parent = panel.sheetParent { parent.endSheet(panel) }
+        panel.orderOut(nil)
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -152,6 +177,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         settingsView.onBack = { [weak self] in self?.showMapping() }
         settingsView.onControllerSelected = { [weak self] in self?.onControllerSelected?($0) }
         settingsView.onPluginToggled = { [weak self] in self?.onPluginToggled?($0, $1) }
+        settingsView.onQwenToggled = { [weak self] in self?.onQwenToggled?($0) }
         permissionView.onGrant = { [weak self] in self?.onRequestPermissions?() }
         permissionView.onOpenSettings = { [weak self] in self?.onOpenPermissionSettings?($0) }
         permissionView.onContinue = { [weak self] in self?.showMapping() }
@@ -179,4 +205,57 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
 
     @objc private func recover() { if let recoveryAction { onRecovery?(recoveryAction) } }
     @objc private func dismissError() { errorBox.isHidden = true }
+
+    private func buildDownloadPanel() {
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 190),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        panel.title = "下载 Qwen3-ASR"
+        panel.isMovable = false
+
+        let icon = NSImageView(image: NSImage(systemSymbolName: "arrow.down.circle.fill", accessibilityDescription: "下载")!)
+        icon.contentTintColor = .controlAccentColor
+        let title = NSTextField(labelWithString: "Qwen3-ASR 0.6B · MLX 4-bit")
+        title.font = .systemFont(ofSize: 16, weight: .semibold)
+        let detail = NSTextField(wrappingLabelWithString: "模型只下载一次并保存在本机。取消或下载失败时会自动切回系统语音识别。")
+        detail.textColor = .secondaryLabelColor
+        detail.font = .systemFont(ofSize: 12)
+        let progress = NSProgressIndicator()
+        progress.isIndeterminate = false
+        progress.minValue = 0
+        progress.maxValue = 100
+        progress.controlSize = .regular
+        let status = NSTextField(labelWithString: "准备下载…")
+        status.font = .systemFont(ofSize: 11)
+        status.textColor = .secondaryLabelColor
+        let cancel = NSButton(title: "取消", target: self, action: #selector(cancelQwenDownload))
+
+        guard let contentView = panel.contentView else { return }
+        for view in [icon, title, detail, progress, status, cancel] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(view)
+        }
+        NSLayoutConstraint.activate([
+            icon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            icon.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24),
+            icon.widthAnchor.constraint(equalToConstant: 34), icon.heightAnchor.constraint(equalToConstant: 34),
+            title.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 14),
+            title.topAnchor.constraint(equalTo: icon.topAnchor),
+            detail.leadingAnchor.constraint(equalTo: title.leadingAnchor), detail.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            detail.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 4),
+            progress.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            progress.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            progress.topAnchor.constraint(equalTo: detail.bottomAnchor, constant: 20),
+            status.leadingAnchor.constraint(equalTo: progress.leadingAnchor), status.topAnchor.constraint(equalTo: progress.bottomAnchor, constant: 8),
+            cancel.trailingAnchor.constraint(equalTo: progress.trailingAnchor), cancel.centerYAnchor.constraint(equalTo: status.centerYAnchor)
+        ])
+        downloadPanel = panel
+        downloadProgress = progress
+        downloadStatus = status
+    }
+
+    @objc private func cancelQwenDownload() { onCancelQwenDownload?() }
 }

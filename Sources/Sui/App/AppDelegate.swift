@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var devices: [ControllerService.Device] = []
     private var selectedControllerKey: String?
     private var mappings: [String: PluginID] = ["A": .telegram, "B": .x, "Y": .codex]
+    private var qwenDownloadTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let iconURL = Bundle.main.url(forResource: "sui", withExtension: "icns"),
@@ -33,6 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mainWindow.show()
         mainWindow.showPermissions(permissionCenter.snapshot)
         logger.notice("sui finished launching")
+        if currentSpeechEngine == .qwen3 { startQwenDownload() }
 #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--debug-safari-bridge") {
             Task {
@@ -67,6 +69,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.plugins.setEnabled(enabled, id: id)
             self?.refreshUI()
         }
+        mainWindow.onQwenToggled = { [weak self] enabled in
+            guard let self else { return }
+            if enabled { startQwenDownload() }
+            else { useSystemSpeech() }
+        }
+        mainWindow.onCancelQwenDownload = { [weak self] in self?.useSystemSpeech() }
         mainWindow.onRecovery = { [weak self] action in self?.plugins.perform(action) }
         mainWindow.onRequestPermissions = { [weak self] in
             guard let self else { return }
@@ -116,7 +124,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             availability: availability,
             devices: devices,
             selectedKey: selectedControllerKey,
-            pluginHost: plugins
+            pluginHost: plugins,
+            qwenEnabled: currentSpeechEngine == .qwen3
         )
+    }
+
+    private var currentSpeechEngine: SpeechEngineChoice {
+        SpeechEngineChoice(
+            rawValue: UserDefaults.standard.string(forKey: SpeechEngineChoice.defaultsKey) ?? ""
+        ) ?? .system
+    }
+
+    private func startQwenDownload() {
+        guard qwenDownloadTask == nil else { return }
+        mainWindow.showQwenDownload()
+        qwenDownloadTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await coordinator.installQwen { [weak self] progress, status in
+                    self?.mainWindow.updateQwenDownload(progress: progress, status: status)
+                }
+                mainWindow.closeQwenDownload()
+                qwenDownloadTask = nil
+                refreshUI()
+            } catch {
+                finishQwenFallback(message: Task.isCancelled ? nil : error.localizedDescription)
+            }
+        }
+    }
+
+    private func useSystemSpeech() {
+        qwenDownloadTask?.cancel()
+        qwenDownloadTask = nil
+        UserDefaults.standard.set(SpeechEngineChoice.system.rawValue, forKey: SpeechEngineChoice.defaultsKey)
+        coordinator.useSystemSpeech()
+        mainWindow.closeQwenDownload()
+        refreshUI()
+    }
+
+    private func finishQwenFallback(message: String?) {
+        qwenDownloadTask = nil
+        UserDefaults.standard.set(SpeechEngineChoice.system.rawValue, forKey: SpeechEngineChoice.defaultsKey)
+        coordinator.useSystemSpeech()
+        mainWindow.closeQwenDownload()
+        refreshUI()
+        if let message {
+            mainWindow.showFailure(
+                title: "Qwen3-ASR 下载失败",
+                message: "已切回系统语音识别。\n\(message)",
+                actionTitle: nil,
+                action: nil
+            )
+        }
     }
 }

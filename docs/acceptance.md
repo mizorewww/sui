@@ -4,7 +4,7 @@
 
 - [x] Xcode 27 使用 Apple Development 证书编译成功。
 - [x] Debug App 可启动，Hardened Runtime、麦克风说明与 audio-input entitlement 存在。
-- [ ] `.env`、Derived Data 和用户 Xcode 状态不进入 Git。
+- [x] `.env`、Derived Data、模型依赖缓存和用户 Xcode 状态不进入 Git。
 
 ## 界面
 
@@ -25,6 +25,8 @@
 - [ ] X 未安装扩展或未登录时不发布，sui 到前台说明原因。
 - [x] Safari 设置能发现唯一一份 `sui Browser Bridge`，且 sui 内提供直接打开扩展设置的入口。
 - [ ] 禁用插件后不加载其运行实例。
+- [x] Qwen3-ASR 下载取消或失败后恢复系统语音识别。
+- [x] 系统语音识别使用 Apple SpeechDetector 过滤非语音片段。
 
 ## 人工测试安全线
 

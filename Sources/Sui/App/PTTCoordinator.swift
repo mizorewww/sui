@@ -35,6 +35,20 @@ final class PTTCoordinator {
         warmupTask = Task { try await speech.prepare() }
     }
 
+    func installQwen(progress: @escaping SpeechService.DownloadProgress) async throws {
+        try await speech.installQwen(progress: progress)
+        warmupTask = Task { try await speech.prepare() }
+        try await warmupTask?.value
+    }
+
+    func useSystemSpeech() {
+        warmupTask?.cancel()
+        warmupTask = Task {
+            await speech.setEngine(.system)
+            try await speech.prepare()
+        }
+    }
+
     func button(_ button: String, pressed: Bool, mapping: [String: PluginID]) {
         if pressed { begin(button: button, pluginID: mapping[button] ?? .none) }
         else { end(button: button) }
