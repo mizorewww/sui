@@ -26,12 +26,11 @@ final class NativeAutomationHost {
             logger.error("Accessibility permission missing")
             return nil
         }
-        guard let application = await runningOrLaunchApplication(bundleIdentifiers: bundleIdentifiers) else {
+        guard let application = await activateApplication(bundleIdentifiers: bundleIdentifiers) else {
             logger.error("Target application could not be launched")
             return nil
         }
-        _ = application.activate(options: [.activateAllWindows])
-        for _ in 0..<60 where !application.isActive {
+        for _ in 0..<100 where !application.isActive {
             try? await Task.sleep(for: .milliseconds(50))
         }
         guard application.isActive else {
@@ -52,11 +51,13 @@ final class NativeAutomationHost {
     }
 
     func execute(text: String, target: Target) async throws {
-        _ = target.application.activate(options: [.activateAllWindows])
-        for _ in 0..<8 where !target.application.isActive {
+        guard let application = await activateApplication(bundleIdentifiers: [target.application.bundleIdentifier].compactMap { $0 }) else {
+            throw SuiError.automation("无法把目标应用切换到前台。")
+        }
+        for _ in 0..<40 where !application.isActive {
             try await Task.sleep(for: .milliseconds(50))
         }
-        guard target.application.isActive else {
+        guard application.isActive else {
             throw SuiError.automation("无法把目标应用切换到前台。")
         }
         let focusError = AXUIElementSetAttributeValue(target.composer, kAXFocusedAttribute as CFString, kCFBooleanTrue)
@@ -82,10 +83,7 @@ final class NativeAutomationHost {
         NSWorkspace.shared.openApplication(at: url, configuration: .init())
     }
 
-    private func runningOrLaunchApplication(bundleIdentifiers: [String]) async -> NSRunningApplication? {
-        if let application = runningApplication(bundleIdentifiers: bundleIdentifiers) {
-            return application
-        }
+    private func activateApplication(bundleIdentifiers: [String]) async -> NSRunningApplication? {
         guard let url = bundleIdentifiers.lazy.compactMap({ NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) }).first else {
             return nil
         }
@@ -94,7 +92,11 @@ final class NativeAutomationHost {
         configuration.createsNewApplicationInstance = false
         configuration.hides = false
         do {
-            logger.notice("Launching target application at \(url.path, privacy: .public)")
+            // Relinquish the foreground first. NSRunningApplication.activate can be
+            // rejected when sui is active even though this came from a controller
+            // press. Opening with activates=true after hiding sui is deterministic.
+            NSApp.hide(nil)
+            logger.notice("Opening target application at \(url.path, privacy: .public)")
             return try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
         } catch {
             logger.error("Launch failed: \(error.localizedDescription, privacy: .public)")

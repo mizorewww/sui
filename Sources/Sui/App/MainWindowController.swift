@@ -46,6 +46,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
 
     func show() {
         NSApp.setActivationPolicy(.regular)
+        NSApp.unhide(nil)
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }
