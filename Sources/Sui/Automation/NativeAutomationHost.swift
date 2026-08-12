@@ -21,9 +21,18 @@ final class NativeAutomationHost {
         }
     }
 
-    func prepare(bundleIdentifiers: [String], hints: [String]) -> Target? {
+    func prepare(bundleIdentifiers: [String], hints: [String]) async -> Target? {
         guard AXIsProcessTrusted(), let application = runningApplication(bundleIdentifiers: bundleIdentifiers) else {
             logger.error("Target unavailable or Accessibility permission missing")
+            return nil
+        }
+        _ = application.activate(options: [.activateAllWindows])
+        for _ in 0..<12 where !application.isActive {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        guard application.isActive else {
+            let bundleIdentifier = application.bundleIdentifier ?? "unknown"
+            logger.error("Unable to bring \(bundleIdentifier, privacy: .public) to the foreground")
             return nil
         }
         let appElement = AXUIElementCreateApplication(application.processIdentifier)
@@ -36,7 +45,13 @@ final class NativeAutomationHost {
     }
 
     func execute(text: String, target: Target) async throws {
-        target.application.activate(options: [.activateAllWindows])
+        _ = target.application.activate(options: [.activateAllWindows])
+        for _ in 0..<8 where !target.application.isActive {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        guard target.application.isActive else {
+            throw SuiError.automation("无法把目标应用切换到前台。")
+        }
         let focusError = AXUIElementSetAttributeValue(target.composer, kAXFocusedAttribute as CFString, kCFBooleanTrue)
         guard focusError == .success else {
             throw SuiError.automation("无法聚焦目标输入框。")

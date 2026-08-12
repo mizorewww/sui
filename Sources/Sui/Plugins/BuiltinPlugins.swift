@@ -31,7 +31,7 @@ final class NativeAppPlugin: SuiPlugin {
                 action: .openAccessibilitySettings
             )
         }
-        guard let target = host.prepare(bundleIdentifiers: bundleIdentifiers, hints: hints) else {
+        guard let target = await host.prepare(bundleIdentifiers: bundleIdentifiers, hints: hints) else {
             return .notReady(
                 title: "\(descriptor.name) 未准备好",
                 message: descriptor.id == .telegram
