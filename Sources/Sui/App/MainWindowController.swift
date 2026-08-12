@@ -172,4 +172,3 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
     @objc private func recover() { if let recoveryAction { onRecovery?(recoveryAction) } }
     @objc private func dismissError() { errorBox.isHidden = true }
 }
-

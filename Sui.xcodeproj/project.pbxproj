@@ -29,6 +29,7 @@
 		9B3948DD85BEC4E811808427 /* ControllerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99E80B7001927EC4622A0129 /* ControllerService.swift */; };
 		AA5416B6BB96DFB1263F15C5 /* PluginTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA67199862389EE922EE8E2E /* PluginTypes.swift */; };
 		BDEB026037413EC74EB65938 /* sui.icns in Resources */ = {isa = PBXBuildFile; fileRef = D2ABE9C66FC039169ADAEBDD /* sui.icns */; };
+		C68203575AAEAFE63DDE4093 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = C050207C30CC06A957F13186 /* main.swift */; };
 		EB398498D8B7112254EE03BC /* BrowserBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19C992E204C14BAF12E31AE4 /* BrowserBridge.swift */; };
 		F8D5B85F56B3800370AED74C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07681A3B92076C53D0CAF4F3 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
@@ -98,6 +99,7 @@
 		A0008581E1378921106F680D /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
 		ABBB8CE0CC1677AE1971AFFF /* PTTCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PTTCoordinator.swift; sourceTree = "<group>"; };
 		BA67199862389EE922EE8E2E /* PluginTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginTypes.swift; sourceTree = "<group>"; };
+		C050207C30CC06A957F13186 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		D2ABE9C66FC039169ADAEBDD /* sui.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = sui.icns; sourceTree = "<group>"; };
 		D3F746324B7A9A5EC1FB576B /* controller.svg */ = {isa = PBXFileReference; path = controller.svg; sourceTree = "<group>"; };
 		DFD984A694CACCCA3D85F262 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
@@ -158,6 +160,7 @@
 			isa = PBXGroup;
 			children = (
 				07681A3B92076C53D0CAF4F3 /* AppDelegate.swift */,
+				C050207C30CC06A957F13186 /* main.swift */,
 				3CA1E9D022E1A32219495177 /* MainWindowController.swift */,
 				ABBB8CE0CC1677AE1971AFFF /* PTTCoordinator.swift */,
 				509CB09810263D7967BB33E9 /* StatusItemController.swift */,
@@ -393,6 +396,7 @@
 				44FDC6DB2549B2BDDE317FF4 /* SettingsView.swift in Sources */,
 				088D2390CAFCE50D16217B6E /* SpeechService.swift in Sources */,
 				20C9D90FDF66E03A8D4AB91A /* StatusItemController.swift in Sources */,
+				C68203575AAEAFE63DDE4093 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,6 +1,5 @@
 import AppKit
 
-@main
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let browserBridge = BrowserBridge()

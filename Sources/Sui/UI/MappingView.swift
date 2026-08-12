@@ -17,7 +17,9 @@ final class MappingView: NSView {
         controllerImage.imageScaling = .scaleProportionallyUpOrDown
         controllerImage.contentTintColor = .labelColor
         if let url = Bundle.main.url(forResource: "controller", withExtension: "svg") {
-            controllerImage.image = NSImage(contentsOf: url)
+            let image = NSImage(contentsOf: url)
+            image?.isTemplate = true
+            controllerImage.image = image
         }
         addSubview(controllerImage)
 
@@ -117,4 +119,3 @@ final class MappingView: NSView {
         onMappingChanged?(button, pluginID)
     }
 }
-
