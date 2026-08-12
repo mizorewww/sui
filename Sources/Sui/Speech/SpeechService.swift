@@ -1,8 +1,10 @@
 import AVFoundation
 import Speech
+import OSLog
 
 @available(macOS 27, *)
 actor SpeechService {
+    private let logger = Logger(subsystem: "com.mizore.sui", category: "speech")
     private var analyzer: SpeechAnalyzer?
     private var transcriber: SpeechTranscriber?
     private var provider: CaptureInputSequenceProvider?
@@ -10,6 +12,32 @@ actor SpeechService {
     private var resultsTask: Task<Void, Never>?
     private var finalText = ""
     private var volatileText = ""
+    private var readyLocale: Locale?
+
+    func prepare() async throws {
+        guard readyLocale == nil else { return }
+        try await requestPermissions()
+        let preferredChineseIdentifier = Locale.preferredLanguages.first { $0.hasPrefix("zh") }
+        let preferredChinese = preferredChineseIdentifier.flatMap { Locale(identifier: $0) }
+        let chineseLocale = if let preferredChinese {
+            await SpeechTranscriber.supportedLocale(equivalentTo: preferredChinese)
+        } else {
+            await SpeechTranscriber.supportedLocale(equivalentTo: Locale(identifier: "zh-CN"))
+        }
+        let currentLocale = await SpeechTranscriber.supportedLocale(equivalentTo: .current)
+        guard let locale = chineseLocale ?? currentLocale else {
+            throw SuiError.speech("当前语言不受系统语音识别支持。")
+        }
+        let probe = SpeechTranscriber(locale: locale, preset: .progressiveTranscription)
+        let modules: [any SpeechModule] = [probe]
+        let status = await AssetInventory.status(forModules: modules)
+        if status != .installed, let request = try await AssetInventory.assetInstallationRequest(supporting: modules) {
+            logger.notice("Installing speech model for \(locale.identifier, privacy: .public)")
+            try await request.downloadAndInstall()
+        }
+        readyLocale = locale
+        logger.notice("Speech model is ready for \(locale.identifier, privacy: .public)")
+    }
 
     func requestPermissions() async throws {
         let microphoneAllowed = await AVCaptureDevice.requestAccess(for: .audio)
@@ -27,24 +55,12 @@ actor SpeechService {
 
     func start() async throws {
         guard analyzer == nil else { return }
-        try await requestPermissions()
-
-        let currentLocale = await SpeechTranscriber.supportedLocale(equivalentTo: .current)
-        let fallbackLocale = await SpeechTranscriber.supportedLocale(equivalentTo: Locale(identifier: "zh-CN"))
-        let locale = currentLocale ?? fallbackLocale
-        guard let locale else {
-            throw SuiError.speech("当前语言不受系统语音识别支持。")
-        }
+        logger.notice("Starting speech capture")
+        try await prepare()
+        guard let locale = readyLocale else { throw SuiError.speech("语音模型尚未准备好。") }
 
         let transcriber = SpeechTranscriber(locale: locale, preset: .progressiveTranscription)
         let modules: [any SpeechModule] = [transcriber]
-        let status = await AssetInventory.status(forModules: modules)
-        if status != .installed {
-            if let request = try await AssetInventory.assetInstallationRequest(supporting: modules) {
-                try await request.downloadAndInstall()
-            }
-        }
-
         guard let microphone = AVCaptureDevice.default(for: .audio) else {
             throw SuiError.speech("没有找到可用麦克风。")
         }
@@ -77,6 +93,7 @@ actor SpeechService {
         self.provider = provider
         self.analyzer = analyzer
         provider.captureSession.startRunning()
+        logger.notice("Capture session is running")
         let inputs = provider.analyzerInputs
         analyzerTask = Task.detached(priority: .userInitiated) {
             try await analyzer.start(inputSequence: inputs)
@@ -90,6 +107,7 @@ actor SpeechService {
         _ = try await analyzerTask?.value
         _ = await resultsTask?.value
         let text = (finalText + volatileText).trimmingCharacters(in: .whitespacesAndNewlines)
+        logger.notice("Speech capture stopped with \(text.count) characters")
         reset()
         return text
     }

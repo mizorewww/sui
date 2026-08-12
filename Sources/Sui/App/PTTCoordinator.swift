@@ -1,7 +1,9 @@
 import Foundation
+import OSLog
 
 @MainActor
 final class PTTCoordinator {
+    private let logger = Logger(subsystem: "com.mizore.sui", category: "ptt")
     enum State: Equatable {
         case idle
         case recording(button: String, plugin: PluginID)
@@ -25,8 +27,13 @@ final class PTTCoordinator {
     private let plugins: PluginHost
     private var state: State = .idle { didSet { onStateChanged?(state) } }
     private var preparationTask: Task<PluginPreparation, Never>?
+    private var recordingTask: Task<Void, Error>?
+    private var warmupTask: Task<Void, Error>?
 
-    init(plugins: PluginHost) { self.plugins = plugins }
+    init(plugins: PluginHost) {
+        self.plugins = plugins
+        warmupTask = Task { try await speech.prepare() }
+    }
 
     func button(_ button: String, pressed: Bool, mapping: [String: PluginID]) {
         if pressed { begin(button: button, pluginID: mapping[button] ?? .none) }
@@ -40,10 +47,11 @@ final class PTTCoordinator {
             return
         }
         state = .recording(button: button, plugin: pluginID)
+        logger.notice("Button \(button, privacy: .public) pressed for \(pluginID.rawValue, privacy: .public)")
         preparationTask = Task { await plugin.prepare() }
-        Task {
-            do { try await speech.start() }
-            catch { fail(title: "无法开始录音", message: error.localizedDescription, actionTitle: nil, action: nil) }
+        recordingTask = Task { [weak self] in
+            try await self?.warmupTask?.value
+            try await self?.speech.start()
         }
     }
 
@@ -51,6 +59,14 @@ final class PTTCoordinator {
         guard case .recording(let activeButton, let pluginID) = state, activeButton == button else { return }
         state = .transcribing
         Task {
+            logger.notice("Button \(button, privacy: .public) released")
+            do {
+                try await recordingTask?.value
+            } catch {
+                await speech.cancel()
+                fail(title: "无法开始录音", message: error.localizedDescription, actionTitle: nil, action: nil)
+                return
+            }
             let preparation = await preparationTask?.value ?? .notReady(title: "目标未准备好", message: "请重试。", actionTitle: nil, action: nil)
             guard case .ready = preparation else {
                 await speech.cancel()
@@ -61,6 +77,7 @@ final class PTTCoordinator {
             }
             do {
                 let text = try await speech.stop()
+                logger.notice("Transcription finished with \(text.count) characters")
                 guard !text.isEmpty else {
                     fail(title: "没有听清", message: "没有识别到语音，请按住按键后再说话。", actionTitle: nil, action: nil)
                     return
@@ -76,9 +93,10 @@ final class PTTCoordinator {
 
     private func fail(title: String, message: String, actionTitle: String?, action: PluginRecoveryAction?) {
         preparationTask?.cancel()
+        recordingTask?.cancel()
         preparationTask = nil
+        recordingTask = nil
         state = .idle
         onFailure?(title, message, actionTitle, action)
     }
 }
-

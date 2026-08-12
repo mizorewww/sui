@@ -1,7 +1,9 @@
 import AppKit
+import OSLog
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let logger = Logger(subsystem: "com.mizore.sui", category: "lifecycle")
     private let browserBridge = BrowserBridge()
     private lazy var plugins = PluginHost(browserBridge: browserBridge)
     private lazy var coordinator = PTTCoordinator(plugins: plugins)
@@ -15,6 +17,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var mappings: [String: PluginID] = ["A": .telegram, "B": .x, "Y": .codex]
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if let iconURL = Bundle.main.url(forResource: "sui", withExtension: "icns"),
+           let icon = NSImage(contentsOf: iconURL) {
+            NSApp.applicationIconImage = icon
+        } else {
+            logger.error("App icon resource is missing")
+        }
         NSApp.setActivationPolicy(.accessory)
         BrowserExtensionInstaller.installNativeMessagingManifests()
         browserBridge.start()
@@ -24,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         refreshUI()
         mainWindow.show()
         mainWindow.showPermissions(permissionCenter.snapshot)
+        logger.notice("sui finished launching")
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
@@ -68,7 +77,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.statusItem.setState(state)
         }
         coordinator.onFailure = { [weak self] title, message, actionTitle, action in
+            self?.logger.error("PTT failed: \(title, privacy: .public) — \(message, privacy: .public)")
             self?.mainWindow.showFailure(title: title, message: message, actionTitle: actionTitle, action: action)
+        }
+        browserBridge.onConnectionChanged = { [weak self] connected in
+            self?.logger.notice("Browser extension connection: \(connected)")
+            self?.refreshUI()
         }
     }
 

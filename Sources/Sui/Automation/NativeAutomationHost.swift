@@ -1,8 +1,10 @@
 import AppKit
 import ApplicationServices
+import OSLog
 
 @MainActor
 final class NativeAutomationHost {
+    private let logger = Logger(subsystem: "com.mizore.sui", category: "native-automation")
     struct Target {
         let application: NSRunningApplication
         let composer: AXUIElement
@@ -21,10 +23,15 @@ final class NativeAutomationHost {
 
     func prepare(bundleIdentifiers: [String], hints: [String]) -> Target? {
         guard AXIsProcessTrusted(), let application = runningApplication(bundleIdentifiers: bundleIdentifiers) else {
+            logger.error("Target unavailable or Accessibility permission missing")
             return nil
         }
         let appElement = AXUIElementCreateApplication(application.processIdentifier)
-        guard let composer = findEditable(in: appElement, depth: 0, hints: hints) else { return nil }
+        guard let composer = findEditable(in: appElement, hints: hints) else {
+            logger.error("No matching composer found in \(application.bundleIdentifier ?? "unknown", privacy: .public)")
+            return nil
+        }
+        logger.notice("Composer found in \(application.bundleIdentifier ?? "unknown", privacy: .public)")
         return Target(application: application, composer: composer)
     }
 
@@ -53,28 +60,53 @@ final class NativeAutomationHost {
         NSWorkspace.shared.openApplication(at: url, configuration: .init())
     }
 
-    private func findEditable(in element: AXUIElement, depth: Int, hints: [String]) -> AXUIElement? {
-        guard depth < 14 else { return nil }
-        let role = stringAttribute(kAXRoleAttribute, of: element) ?? ""
-        let enabled = boolAttribute(kAXEnabledAttribute, of: element) ?? true
-        let editableRole = role == kAXTextAreaRole as String || role == kAXTextFieldRole as String
-        if editableRole && enabled {
+    private func findEditable(in root: AXUIElement, hints: [String]) -> AXUIElement? {
+        let childAttributes = [
+            kAXFocusedUIElementAttribute,
+            kAXWindowsAttribute,
+            kAXChildrenAttribute,
+            kAXContentsAttribute,
+            kAXVisibleChildrenAttribute,
+            kAXRowsAttribute
+        ]
+        var queue: [AXUIElement] = [root]
+        var visited = Set<CFHashCode>()
+        var fallback: AXUIElement?
+        var inspected = 0
+
+        while !queue.isEmpty, inspected < 5_000 {
+            let element = queue.removeFirst()
+            let hash = CFHash(element)
+            guard visited.insert(hash).inserted else { continue }
+            inspected += 1
+            let role = stringAttribute(kAXRoleAttribute, of: element) ?? ""
+            let enabled = boolAttribute(kAXEnabledAttribute, of: element) ?? true
+            let editableRole = role == kAXTextAreaRole as String || role == kAXTextFieldRole as String
+            if editableRole && enabled {
             let haystack = [
                 stringAttribute(kAXDescriptionAttribute, of: element),
                 stringAttribute(kAXTitleAttribute, of: element),
                 stringAttribute(kAXHelpAttribute, of: element),
                 stringAttribute(kAXPlaceholderValueAttribute, of: element)
             ].compactMap { $0 }.joined(separator: " ").lowercased()
-            if hints.isEmpty || hints.contains(where: { haystack.contains($0.lowercased()) }) {
-                return element
+                if hints.isEmpty || hints.contains(where: { haystack.contains($0.lowercased()) }) {
+                    return element
+                }
+                if fallback == nil, boolAttribute(kAXFocusedAttribute, of: element) == true {
+                    fallback = element
+                }
+            }
+            for attribute in childAttributes {
+                guard let value = valueAttribute(attribute, of: element) else { continue }
+                if CFGetTypeID(value) == AXUIElementGetTypeID() {
+                    queue.append(unsafeDowncast(value, to: AXUIElement.self))
+                } else if let children = value as? [AXUIElement] {
+                    queue.append(contentsOf: children)
+                }
             }
         }
-
-        guard let children = valueAttribute(kAXChildrenAttribute, of: element) as? [AXUIElement] else { return nil }
-        for child in children {
-            if let found = findEditable(in: child, depth: depth + 1, hints: hints) { return found }
-        }
-        return nil
+        logger.debug("Inspected \(inspected) accessibility elements")
+        return fallback
     }
 
     private func valueAttribute(_ name: String, of element: AXUIElement) -> CFTypeRef? {

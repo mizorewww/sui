@@ -1,8 +1,11 @@
 @preconcurrency import Network
 import AppKit
+import OSLog
 
 @MainActor
 final class BrowserBridge {
+    private let logger = Logger(subsystem: "com.mizore.sui", category: "browser-bridge")
+    var onConnectionChanged: ((Bool) -> Void)?
     private struct Command: Codable {
         let id: UUID
         let command: String
@@ -29,11 +32,15 @@ final class BrowserBridge {
             listener.newConnectionHandler = { [weak self] connection in
                 Task { @MainActor in self?.accept(connection) }
             }
-            listener.stateUpdateHandler = { _ in }
+            listener.stateUpdateHandler = { [weak self] state in
+                if case .failed(let error) = state {
+                    Task { @MainActor in self?.logger.error("Listener failed: \(error.localizedDescription, privacy: .public)") }
+                }
+            }
             listener.start(queue: .global(qos: .utility))
             self.listener = listener
         } catch {
-            // The UI will report the bridge as unavailable.
+            logger.error("Unable to start listener: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -66,10 +73,19 @@ final class BrowserBridge {
     private func accept(_ connection: NWConnection) {
         self.connection?.cancel()
         self.connection = connection
+        onConnectionChanged?(true)
         incoming.removeAll(keepingCapacity: true)
         connection.stateUpdateHandler = { [weak self] state in
-            if case .failed = state { Task { @MainActor in self?.connection = nil } }
-            if case .cancelled = state { Task { @MainActor in self?.connection = nil } }
+            if case .failed(let error) = state {
+                Task { @MainActor in
+                    self?.logger.error("Bridge connection failed: \(error.localizedDescription, privacy: .public)")
+                    self?.connection = nil
+                    self?.onConnectionChanged?(false)
+                }
+            }
+            if case .cancelled = state {
+                Task { @MainActor in self?.connection = nil; self?.onConnectionChanged?(false) }
+            }
         }
         connection.start(queue: .global(qos: .utility))
         receive(on: connection)
@@ -80,7 +96,7 @@ final class BrowserBridge {
             Task { @MainActor in
                 guard let self else { return }
                 if let data { self.consume(data) }
-                if isComplete { self.connection = nil }
+                if isComplete { self.connection = nil; self.onConnectionChanged?(false) }
                 else { self.receive(on: connection) }
             }
         }
@@ -122,4 +138,3 @@ final class BrowserBridge {
         }
     }
 }
-
