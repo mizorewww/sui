@@ -12,6 +12,9 @@ final class SettingsView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
 
+        let contentGuide = NSLayoutGuide()
+        addLayoutGuide(contentGuide)
+
         let back = NSButton(title: "Mapping", target: self, action: #selector(backPressed))
         back.image = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: nil)
         back.bezelStyle = .accessoryBarAction
@@ -38,19 +41,26 @@ final class SettingsView: NSView {
         }
 
         NSLayoutConstraint.activate([
-            back.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 34),
+            contentGuide.centerXAnchor.constraint(equalTo: centerXAnchor),
+            contentGuide.widthAnchor.constraint(lessThanOrEqualToConstant: 720),
+            contentGuide.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 38),
+            contentGuide.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -38),
+            contentGuide.widthAnchor.constraint(equalTo: widthAnchor, constant: -76).withPriority(.defaultHigh),
+            back.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
             back.topAnchor.constraint(equalTo: topAnchor, constant: 26),
-            title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 38),
+            title.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
             title.topAnchor.constraint(equalTo: back.bottomAnchor, constant: 26),
             controllerTitle.leadingAnchor.constraint(equalTo: title.leadingAnchor),
             controllerTitle.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 32),
             controllerPopup.leadingAnchor.constraint(equalTo: title.leadingAnchor),
             controllerPopup.topAnchor.constraint(equalTo: controllerTitle.bottomAnchor, constant: 10),
-            controllerPopup.widthAnchor.constraint(equalToConstant: 420),
+            controllerPopup.trailingAnchor.constraint(lessThanOrEqualTo: contentGuide.trailingAnchor),
+            controllerPopup.widthAnchor.constraint(lessThanOrEqualToConstant: 420),
+            controllerPopup.widthAnchor.constraint(greaterThanOrEqualToConstant: 260),
             pluginsTitle.leadingAnchor.constraint(equalTo: title.leadingAnchor),
             pluginsTitle.topAnchor.constraint(equalTo: controllerPopup.bottomAnchor, constant: 34),
             pluginStack.leadingAnchor.constraint(equalTo: title.leadingAnchor),
-            pluginStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -38),
+            pluginStack.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor),
             pluginStack.topAnchor.constraint(equalTo: pluginsTitle.bottomAnchor, constant: 10)
         ])
     }
@@ -120,3 +130,9 @@ final class SettingsView: NSView {
     }
 }
 
+private extension NSLayoutConstraint {
+    func withPriority(_ priority: Priority) -> NSLayoutConstraint {
+        self.priority = priority
+        return self
+    }
+}
