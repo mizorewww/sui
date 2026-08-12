@@ -22,12 +22,16 @@ final class NativeAutomationHost {
     }
 
     func prepare(bundleIdentifiers: [String], hints: [String]) async -> Target? {
-        guard AXIsProcessTrusted(), let application = runningApplication(bundleIdentifiers: bundleIdentifiers) else {
-            logger.error("Target unavailable or Accessibility permission missing")
+        guard AXIsProcessTrusted() else {
+            logger.error("Accessibility permission missing")
+            return nil
+        }
+        guard let application = await runningOrLaunchApplication(bundleIdentifiers: bundleIdentifiers) else {
+            logger.error("Target application could not be launched")
             return nil
         }
         _ = application.activate(options: [.activateAllWindows])
-        for _ in 0..<12 where !application.isActive {
+        for _ in 0..<60 where !application.isActive {
             try? await Task.sleep(for: .milliseconds(50))
         }
         guard application.isActive else {
@@ -36,12 +40,15 @@ final class NativeAutomationHost {
             return nil
         }
         let appElement = AXUIElementCreateApplication(application.processIdentifier)
-        guard let composer = findEditable(in: appElement, hints: hints) else {
-            logger.error("No matching composer found in \(application.bundleIdentifier ?? "unknown", privacy: .public)")
-            return nil
+        for _ in 0..<30 {
+            if let composer = findEditable(in: appElement, hints: hints) {
+                logger.notice("Composer found in \(application.bundleIdentifier ?? "unknown", privacy: .public)")
+                return Target(application: application, composer: composer)
+            }
+            try? await Task.sleep(for: .milliseconds(100))
         }
-        logger.notice("Composer found in \(application.bundleIdentifier ?? "unknown", privacy: .public)")
-        return Target(application: application, composer: composer)
+        logger.error("No matching composer found in \(application.bundleIdentifier ?? "unknown", privacy: .public)")
+        return nil
     }
 
     func execute(text: String, target: Target) async throws {
@@ -73,6 +80,26 @@ final class NativeAutomationHost {
     func open(bundleIdentifiers: [String]) {
         guard let url = bundleIdentifiers.lazy.compactMap({ NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) }).first else { return }
         NSWorkspace.shared.openApplication(at: url, configuration: .init())
+    }
+
+    private func runningOrLaunchApplication(bundleIdentifiers: [String]) async -> NSRunningApplication? {
+        if let application = runningApplication(bundleIdentifiers: bundleIdentifiers) {
+            return application
+        }
+        guard let url = bundleIdentifiers.lazy.compactMap({ NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) }).first else {
+            return nil
+        }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        configuration.createsNewApplicationInstance = false
+        configuration.hides = false
+        do {
+            logger.notice("Launching target application at \(url.path, privacy: .public)")
+            return try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
+        } catch {
+            logger.error("Launch failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     private func findEditable(in root: AXUIElement, hints: [String]) -> AXUIElement? {

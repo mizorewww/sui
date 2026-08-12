@@ -35,7 +35,7 @@ final class PluginHost {
         case .telegram:
             instance = NativeAppPlugin(
                 descriptor: Self.descriptors.first { $0.id == .telegram }!,
-                bundleIdentifiers: ["ru.keepcoder.Telegram", "org.telegram.desktop"],
+                bundleIdentifiers: ["com.tdesktop.Telegram", "ru.keepcoder.Telegram", "org.telegram.desktop"],
                 hints: ["message", "write", "消息", "信息"],
                 host: automation
             )
@@ -80,4 +80,3 @@ final class PluginHost {
 
     private func enabledKey(_ id: PluginID) -> String { "plugin.\(id.rawValue).enabled" }
 }
-
