@@ -1,4 +1,5 @@
 import AppKit
+import SafariServices
 
 @MainActor
 final class PluginHost {
@@ -75,6 +76,10 @@ final class PluginHost {
         case .openExtensionsFolder:
             let url = Bundle.main.resourceURL?.appending(path: "BrowserExtension")
             if let url { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+        case .openSafariSettings:
+            SFSafariApplication.showPreferencesForExtension(
+                withIdentifier: "com.mizore.sui.SafariExtension"
+            ) { _ in }
         }
     }
 

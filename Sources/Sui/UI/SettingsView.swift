@@ -1,4 +1,5 @@
 import AppKit
+import SafariServices
 
 @MainActor
 final class SettingsView: NSView {
@@ -87,6 +88,30 @@ final class SettingsView: NSView {
         for descriptor in PluginHost.descriptors {
             pluginStack.addArrangedSubview(pluginRow(descriptor: descriptor, enabled: pluginHost.isEnabled(descriptor.id)))
         }
+        pluginStack.addArrangedSubview(safariExtensionRow())
+    }
+
+    private func safariExtensionRow() -> NSView {
+        let row = NSView()
+        row.heightAnchor.constraint(equalToConstant: 62).isActive = true
+        let icon = NSImageView(image: NSImage(systemSymbolName: "safari", accessibilityDescription: "Safari")!)
+        icon.contentTintColor = .controlAccentColor
+        let name = NSTextField(labelWithString: "Safari Extension")
+        name.font = .systemFont(ofSize: 14, weight: .semibold)
+        let detail = NSTextField(labelWithString: "X.com browser bridge")
+        detail.font = .systemFont(ofSize: 11)
+        detail.textColor = .secondaryLabelColor
+        let button = NSButton(title: "Open Settings", target: self, action: #selector(openSafariSettings))
+        button.bezelStyle = .rounded
+        for view in [icon, name, detail, button] { view.translatesAutoresizingMaskIntoConstraints = false; row.addSubview(view) }
+        NSLayoutConstraint.activate([
+            icon.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 16), icon.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 24), icon.heightAnchor.constraint(equalToConstant: 24),
+            name.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 12), name.topAnchor.constraint(equalTo: row.topAnchor, constant: 13),
+            detail.leadingAnchor.constraint(equalTo: name.leadingAnchor), detail.topAnchor.constraint(equalTo: name.bottomAnchor, constant: 2),
+            button.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -16), button.centerYAnchor.constraint(equalTo: row.centerYAnchor)
+        ])
+        return row
     }
 
     private func pluginRow(descriptor: PluginDescriptor, enabled: Bool) -> NSView {
@@ -127,6 +152,11 @@ final class SettingsView: NSView {
     @objc private func pluginToggled(_ sender: NSSwitch) {
         guard let raw = sender.identifier?.rawValue, let id = PluginID(rawValue: raw) else { return }
         onPluginToggled?(id, sender.state == .on)
+    }
+    @objc private func openSafariSettings() {
+        SFSafariApplication.showPreferencesForExtension(
+            withIdentifier: "com.mizore.sui.SafariExtension"
+        ) { _ in }
     }
 }
 

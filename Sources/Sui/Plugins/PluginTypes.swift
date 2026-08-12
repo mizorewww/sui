@@ -34,6 +34,7 @@ enum PluginRecoveryAction: Sendable {
     case openURL(URL)
     case openAccessibilitySettings
     case openExtensionsFolder
+    case openSafariSettings
 }
 
 @MainActor

@@ -72,8 +72,12 @@ targets:
         buildPhase: resources
     entitlements:
       path: SafariExtension/SafariExtension.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
     settings:
       base:
+        ENABLE_APP_SANDBOX: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.mizore.sui.SafariExtension
         PRODUCT_NAME: sui Browser Bridge
         INFOPLIST_FILE: SafariExtension/Info.plist

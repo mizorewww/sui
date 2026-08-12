@@ -1,12 +1,13 @@
 const nativePort = chrome.runtime.connectNative("com.mizore.sui.browserbridge");
 
 nativePort.onMessage.addListener(async (request) => {
+  const command = request?.userInfo ?? request;
   try {
     const tab = await xTab();
-    const response = await chrome.tabs.sendMessage(tab.id, request);
-    nativePort.postMessage({ id: request.id, ...response });
+    const response = await chrome.tabs.sendMessage(tab.id, command);
+    nativePort.postMessage({ id: command.id, ...response });
   } catch (error) {
-    nativePort.postMessage({ id: request.id, ok: false, message: error.message });
+    nativePort.postMessage({ id: command.id, ok: false, message: error.message });
   }
 });
 
@@ -36,4 +37,3 @@ function waitUntilComplete(tabId) {
     chrome.tabs.onUpdated.addListener(listener);
   });
 }
-

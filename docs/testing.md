@@ -7,6 +7,7 @@
 
 - `xcodebuild` Debug 构建成功。
 - 主 App、Native Messaging helper 与 Safari Web Extension 均被嵌入产物。
+- Safari 设置只显示一份 `sui Browser Bridge`；sui 设置页的 `Open Settings` 能直接定位到该扩展。Safari 会阻止自动化工具代替用户勾选，首次启用必须真实点击并按系统要求完成 Touch ID。
 - `codesign --verify --deep --strict` 通过。
 - App 签名 Authority 为 Apple Development，Team Identifier 为 `LT98S43NKA`，Hardened Runtime 为 27.0。
 
