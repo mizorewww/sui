@@ -103,7 +103,11 @@ actor SpeechService {
     func stop() async throws -> String {
         guard let analyzer, let provider else { return "" }
         provider.captureSession.stopRunning()
-        try await analyzer.finalizeAndFinishThroughEndOfInput()
+        // CaptureInputSequenceProvider is a live sequence and does not terminate when
+        // its AVCaptureSession stops. Waiting "through end of input" therefore hangs.
+        // Flush everything already consumed, then explicitly finish the result streams.
+        try await analyzer.finalize(through: nil)
+        await analyzer.cancelAndFinishNow()
         _ = try await analyzerTask?.value
         _ = await resultsTask?.value
         let text = (finalText + volatileText).trimmingCharacters(in: .whitespacesAndNewlines)

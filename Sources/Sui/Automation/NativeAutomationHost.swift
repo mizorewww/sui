@@ -69,6 +69,21 @@ final class NativeAutomationHost {
             kAXVisibleChildrenAttribute,
             kAXRowsAttribute
         ]
+        let focusedElement: AXUIElement? = {
+            guard let value = valueAttribute(kAXFocusedUIElementAttribute, of: root),
+                  CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+            return unsafeDowncast(value, to: AXUIElement.self)
+        }()
+        // Telegram exposes its current message composer as the app's focused
+        // AXTextArea, but supplies no title, help, placeholder, or description.
+        // A search box is an AXTextField, so accepting the focused text area
+        // avoids both the false negative and the "paste into search" failure.
+        if let focusedElement,
+           stringAttribute(kAXRoleAttribute, of: focusedElement) == kAXTextAreaRole as String,
+           boolAttribute(kAXEnabledAttribute, of: focusedElement) ?? true {
+            return focusedElement
+        }
+
         var queue: [AXUIElement] = [root]
         var visited = Set<CFHashCode>()
         var fallback: AXUIElement?
